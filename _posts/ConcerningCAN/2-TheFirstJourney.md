@@ -235,6 +235,28 @@ void initLed(void)
 </div>
 </details>
 
+해당함수는 LED를 키고 끌 수 있도록 설정하기 위한 함수이다.
+- AppLedType 인 전역변수 g_led를 생성하고 그 안에 LED1, LED2를 각각 설정한다.
+   - LED1: P00.5, output, paddriver-cmos
+   - LED2: P00.6, output, paddriver-cmos
+   - 해당 핀들은 TC275 Lite Kit의 LED에 연결된 포트이다.
+- 다음 함수들을 사용해서 LED를 초기화한다.
+- IfxPort_setPinHigh 를 통해서 핀상태를 HIGH로 만든다.
+   - TC275 LK의 LED의 기본 설정은 Active Low이므로 핀 상태를 HIGH만들어서 OFF 상태를 유지한다.
+- IfxPort_setPinModeOutput 를 통해서 핀 모드를 설정한다.
+   - output mode: LED와 연결되므로 GPIO는 Output으로 되어야함
+   - push-pull mode: 내부 회로를 통해 출력을 결정함. 전원(VEXT)은 3.3V을 사용함
+- IfxPort_setPinPadDriver 를통해서 핀의 pad driver를 설정한다.
+
+<details>
+<summary><strong>LED in EVB usermanual(Click)</strong></summary>
+<div markdown="1">
+
+![EVBoard-UM-p13-LED](../assets/postsAssets/ConcerningCAN/Table3_AURIX_Pin_Mapping_for_User_LEDs.png)
+![EVBoard-UM-p20-03-power-a-connector-LED](../assets/postsAssets/ConcerningCAN/Buttons_and_LEDs.png)
+
+</div>
+</details>
 
 #### 2.2.1.4. Transmit CAN Message
 <details>
@@ -275,12 +297,28 @@ void transmitCanMessage(void)
 </div>
 </details>
 
+실제로 CAN 노드를 통해서 데이터를 보내는 함수이다.
+- RX는 메세지를 받아야하므로 보낼메세지가 아닌 값으로 초기화한다.
+   - id: `0xFFFFFFFF`
+   - data:`0xDEADBEEF`
+- TX는 보낼 메세지로 초기화 한다.
+   - messageId: `0x777`
+   - dataLow: `0xC0CAC01A`(cocacola)
+   - dataHigh: `0xBA5EBA11`(baseball)
+- 아래 함수를 통해서 CAN 메세지를 보낸다
+   - `IfxMultican_Can_MsgObj_sendMessage(&g_multican.canSrcMsgObj, &g_multican.txMsg)`
+   - msg object를 확인해서 보낼 메세지가 있으면 메세지를 보낸다. 
+   - 메세지를 보낼때까지(CAN BUS가 IDLE이 아니면) 송신을 계속 시도한다.
+
+
 #### 2.2.1.5. Interrupt Service Routines for TX
 <details>
 <summary><strong>Source Code(Click)</strong></summary>
 <div markdown="1">
 
 ```c
+IFX_INTERRUPT(canIsrTxHandler, 0, ISR_PRIORITY_CAN_TX);
+
 void canIsrTxHandler(void)
 {
     /* Just to indicate that the CAN message has been transmitted by turning on LED1 */
@@ -290,12 +328,27 @@ void canIsrTxHandler(void)
 </div>
 </details>
 
+송신부의 Interrupt handler이다.
+- 데이터가 송신될때 인터럽트 루틴이 발생해서 해당 함수가 불린다.
+- 인터럽트 서비스 루틴을 등록하기 위해선 다음 매크로를 사용한다.
+   - `IFX_INTERRUPT(isr, vectabNum, priority)`
+   - 해당 매크로는 
+   - isr: 인터럽트가 생기면 불리는 콜백함수
+   - vectabNum: Vector table number
+   - priority: 우선순위
+      - 인터럽트가 여러번 불릴 때 처리순서를 위한 우선순위
+      - 같은 순위로 만들수 없으므로 조금더 중요한 걸 높이 올림
+      - tx, rx의 우선순위는 tx를 높게 해놨음.
+- 해당 핸들러가 불리면 GPIO 핀을 LOW로 내려서 LED1을 킴(active low)
+
 #### 2.2.1.6. Interrupt Service Routines for RX
 <details>
 <summary><strong>Source Code(Click)</strong></summary>
 <div markdown="1">
 
 ```c
+IFX_INTERRUPT(canIsrRxHandler, 0, ISR_PRIORITY_CAN_RX);
+
 void canIsrRxHandler(void)
 {
     IfxMultican_Status readStatus;
@@ -331,6 +384,14 @@ void canIsrRxHandler(void)
 ```
 </div>
 </details>
+
+수신부의 Interrupt handler이다.
+- 메세지가 수신되면 해당 핸들러가 불리고 다음을 수행함
+   - 수신된 메세지를 읽고 state를 저장함.
+   - 해당 데이터가 새로운 데이터인지 메세지가 손실되었는지 확인함.
+   - 정상 데이터라면 보낸 메세지와 받은 메세지가 같은지 확인하고 id도 같은지 확인함
+   - 다 같은 경우에만 GPIO 핀을 LOW로 내려서 LED2을 킴(active low)
+- 실제로도 cocacola, baseball이 나오는지 확인 **(결과 사진 필요)**
 
 ### 2.2.2. MULTICAN in Flexible Data-Rate
 
