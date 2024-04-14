@@ -18,7 +18,7 @@ For the hands-on experirment, we will try to port FreeRTOS on TC275 Evaluation k
 -[TC1775 Demo Project]
 -[Legacy FreeRTOS Port on TC277]
 -[TC275 lite kit]
--[[FreeRTOS Port on TC399]]
+-[FreeRTOS Port on TC399]
 
 ## Hands on Experiment Development Environment
 1. TC275 lite kit
