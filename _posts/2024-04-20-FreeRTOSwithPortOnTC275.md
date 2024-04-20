@@ -6,7 +6,7 @@ category: Jekyll
 layout: post
 ---
 
-# FreeRTOS with the port on TC275
+## Overview
 In this project, our ultimate goal is to port FreeRTOS on Infineon Tricore TC275 Evaluation kit, understanding FreeRTOS. During this journey, we are going to handle topics such as FreeRTOS Theory, TC275 MCU Architecture, Hands-on Experiment, Development Enviornment, and Guidance for the experiment.
 
 First, we will look at Free RTOS Theory elaborated in [Mastering-the-FreeRTOS-Real-Time-Kernel.v1.0]. This document written by Richard Barry and FreeRTOS team is very powerful to understand modern OS theory. Second, we will go over Infineon Tricore TC275 MCU Architecture, which is especially related to OS. Finally, we are going to move on hands-on experiment, the port on TC275 Evaulation kit based on these two prerequisites.
