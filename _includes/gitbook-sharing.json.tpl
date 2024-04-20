@@ -1,13 +1,13 @@
             "sharing": {
-                "facebook": true,
+                "facebook": false,
 
                 "google": false,
 
                 "github": true,
               {% if site.github_username %}
-                "github_link": "https://github.com/{{ site.github_username }}",
+                "github_link": "https://github.com/MCUsGarage",
               {% else %}
-                "github_link": "https://github.com",
+                "github_link": "https://github.com/MCUsGarage",
               {% endif %}
 
                 "telegram": false,
@@ -15,7 +15,7 @@
 
                 "instapaper": false,
 
-                "twitter": true,
+                "twitter": false,
               {% if site.twitter_username %}
                 "twitter_link": "https://twitter.com/{{ site.twitter_username }}",
               {% endif %}
@@ -24,5 +24,5 @@
 
                 "weibo": false,
 
-                "all": ["facebook", "google", "twitter", "weibo", "instapaper", "github", "telegram"]
+                "all": ["github"]
             },
