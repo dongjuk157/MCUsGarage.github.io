@@ -43,3 +43,14 @@ MCU 내부 모듈을 설명하면서 필요한 각종 표준에 대해서도 다
 <br>
 <br>
 <br>
+
+
+#### DG Ko
+
+![DG_sapjil](../../assets/postsAssets/About/DG_sapjil.jpg){: width="100" }
+
+안녕하세요
+
+[github](https://github.com/dongjuk157)
+
+[Linkedin](https://www.linkedin.com/in/동건-고-64959b153)
