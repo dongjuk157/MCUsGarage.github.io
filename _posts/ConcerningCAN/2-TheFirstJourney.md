@@ -983,7 +983,7 @@ Example
 
 ### 2.5.1. What is iLLD?
 
-iLLD - Infineon Low Level Driver
+iLLD - Infineon Low Level Driver [Link](https://www.infineon.com/dgdl/Infineon-AURIX_Infineon_Low_Level_Driver-Training-v01_00-EN.pdf?fileId=5546d46269bda8df0169ca77502b254c)
 
 <table>
   <tr>
@@ -992,13 +992,31 @@ iLLD - Infineon Low Level Driver
   </tr>
   <tr>
     <td rowspan="3"> <strong>iLLD</strong> </td>
-    <td> Function Level </td>
+    <td>
+    Function Level <br>
+    - 주변 장치에 대한 동작을 사용할수 있게 만든 계층(초기화, 설정, 기능) <br>
+    - ex) <br>
+      <code>MODULE_STATUS Module_Init() { /* 초기화 코드 */}</code> <br>
+      <code>MODULE_STATUS Module_SendMessege() { /* 메세지 전송 코드 */}</code>
+    </td>
   </tr>
   <tr>
-    <td> Driver Level </td>
+    <td> 
+    Driver Level <br>
+    - 함수 호출로 레지스터 설정을 쉽게 하기 위해 만든 계층 <br>
+    - ex) <br>
+      <code>MODULE_STATUS Module_TimerInit() { /* 타이머 기능 레지스터 설정 */ }</code> <br>
+      <code>MODULE_STATUS Module_Send() { /* 전송 기능 레지스터 설정 */ }</code>
+    </td>
   </tr>
   <tr>
-    <td> Special Function Register Level </td>
+    <td> 
+    Special Function Register Level <br>
+    - 레지스터 이름으로 접근할수 있는 계층 <br>
+    - ex) <br>
+      <code>#define REG_NAME PERIPHERAL_ADDR</code> <br>
+      <code>#define REG_NAME_EN (1 << ADDR_POS)</code>
+    </td>
   </tr>
   <tr>
     <td colspan="2"> Micom </td>
@@ -1006,9 +1024,17 @@ iLLD - Infineon Low Level Driver
   </tr>
 </table>
 
+- Function Level 과 Driver Level이 비슷해 보일순 있지만 추상화의 단계가 다름.
+  - Function Level은 기능 단위, Driver Level은 실제 레지스터 설정 단위이다.
+  - 예를 들면 수신된 데이터를 읽는 함수가 function level, driver level 모두 있다고 하자
+    - function level 에선 데이터를 읽고 가져온 데이터를 어디로 복사해둘지 초점을 맞춘다. 
+    - driver level 에선 어느 주소에 접근해야 하는지 레지스터를 어떻게 바꿔야 하는지 등에 초점을 맞춘다.
 
-(+) Differences between iLLD and MCAL
-- [Link](not-yet)
+(+) Differences between iLLD and MCAL(MC-ISAR)
+- MCAL(Microcontroller Abstraction Layer)은 AUTOSAR 기반으로 만들어진 Low Level Driver임.
+  - AUTOSAR를 준수한다는 것이 뭔지? FuSa? Security? AUTOSAR OS?
+- iLLD와 MCAL은 코드 구조도 다름
+- [Link](https://community.infineon.com/t5/AURIX/What-are-the-differences-between-an-Infineon-MC-ISAR-product-and-iLLD/td-p/316151)
 
 ### 2.5.2. Differences between MULTICAN and MCMCAN(MCAN)
 
