@@ -927,6 +927,8 @@ void verifyCanMessage(void)
 ### 2.2.3. MULTICAN using a Gateway with a TX FIFO
 MULTICAN_GW_TX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infineon-AURIX_MULTICAN_GW_TX_FIFO_1_KIT_TC275_LK-TR-Training-v01_00-EN.pdf?fileId=5546d4627a0b0c7b017a586843c04cc0))
 
+![graphical-representation](../../assets/postsAssets/ConcerningCAN/multican_gw_tx_fifo_graphical_representation.png)
+
 - TX FIFO 구조를 갖는 노드를 만들고, 게이트웨이(Gateway)를 사용해서 CAN BUS 간 데이터를 교환한다.
 - 예제 동작
   1. Node 2에서 CAN BUS(A)로 메세지를 보낸다.(루프백모드일때 모든 노드가 CAN BUS에 접근할수 있음)
@@ -960,17 +962,12 @@ MULTICAN_GW_TX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infi
 <div markdown="1">
 
 ```c
-/* Function to initialize MULTICAN module, nodes and message objects related for this application use case */
 void initMultican(void)
 {
     uint8 currentCanNode;
 
     /* ==========================================================================================
      * CAN module configuration and initialization:
-     * ==========================================================================================
-     *  - load default CAN module configuration into configuration structure
-     *  - define the interrupt priority for both interrupt node pointers used in the example
-     *  - initialize CAN module with the modified configuration
      * ==========================================================================================
      */
     IfxMultican_Can_initModuleConfig(&g_multican.canConfig, &MODULE_CAN);
@@ -982,21 +979,11 @@ void initMultican(void)
     /* ==========================================================================================
      * Common CAN node configuration and initialization:
      * ==========================================================================================
-     *  - load default CAN node configuration into configuration structure
-     *  - set CAN node in the "Loop-Back" mode (no external pins will be used)
-     * ==========================================================================================
      */
     IfxMultican_Can_Node_initConfig(&g_multican.canNodeConfig, &g_multican.can);
 
     g_multican.canNodeConfig.loopBackMode = TRUE;
 
-    /* ==========================================================================================
-     * CAN node [0...3] configuration and initialization:
-     * ==========================================================================================
-     *  - assign node to CAN node "currentCanNode"
-     *  - initialize the CAN node "currentCanNode" with the modified configuration
-     * ==========================================================================================
-     */
     for(currentCanNode = 0; currentCanNode < NUMBER_OF_CAN_NODES; currentCanNode++)
     {
         g_multican.canNodeConfig.nodeId = (IfxMultican_NodeId)currentCanNode;
@@ -1004,28 +991,10 @@ void initMultican(void)
         IfxMultican_Can_Node_init(&g_multican.canNode[currentCanNode], &g_multican.canNodeConfig);
     }
 
-    /* =======================================================================================================
+    /* ======================================================================
      * Gateway source message object configuration and initialization:
-     * =======================================================================================================
-     *  - load default CAN message object configuration into configuration structure
-     *
-     *  - define the message object ID (each message object ID value should be unique)
-     *  - define the CAN message ID used during arbitration phase
-     *  - define the number of FIFO slave objects that is used as gateway DESTINATION object
-     *  - define the message object as a receive message object
-     *  - define the first slave object of the FIFO to be the first message object after TX FIFO base object
-     *
-     *  - enable gateway transfers (will define this message object as gateway source object)
-     *  - copy data length code of the gateway source object to a gateway destination object
-     *  - copy data content of the gateway source object to a gateway destination object
-     *  - do NOT copy identifier (ID) of the gateway source object to a gateway destination object
-     *  - enable setting TXRQ bit in the gateway destination object
-     *  - define the first slave object of the FIFO as the gateway destination object
-     *
-     *  - initialize the gateway source CAN message object with the modified configuration
-     * -------------------------------------------------------------------------------------------------------
      * This CAN message object is assigned to CAN Node 0
-     * =======================================================================================================
+     * ======================================================================
      */
     IfxMultican_Can_MsgObj_initConfig(&g_multican.canMsgObjConfig, &g_multican.canNode[0]);
 
@@ -1044,21 +1013,10 @@ void initMultican(void)
 
     IfxMultican_Can_MsgObj_init(&g_multican.canGtwSrcMsgObj, &g_multican.canMsgObjConfig);
 
-    /* =======================================================================================================
+    /* =====================================================================================
      * Gateway destination (implemented as TX FIFO object) configuration and initialization:
-     * =======================================================================================================
-     *  - load default CAN message object configuration into configuration structure
-     *
-     *  - define the message object ID for the TX FIFO base object (each message object ID value should be unique)
-     *  - define the CAN message ID used during arbitration phase (different than the ID used for source MO)
-     *  - define the number of FIFO slave objects
-     *  - define the message object as a transmit message object (TX FIFO in this case)
-     *  - define the first slave object of the FIFO to be the first message object after TX FIFO base object
-     *
-     *  - initialize the gateway destination CAN message object with the modified configuration
-     * -------------------------------------------------------------------------------------------------------
      * This CAN message object is assigned to CAN Node 1
-     * =======================================================================================================
+     * =====================================================================================
      */
     IfxMultican_Can_MsgObj_initConfig(&g_multican.canMsgObjConfig, &g_multican.canNode[1]);
 
@@ -1070,19 +1028,9 @@ void initMultican(void)
 
     IfxMultican_Can_MsgObj_init(&g_multican.canGtwDstMsgObj, &g_multican.canMsgObjConfig);
 
-    /* =======================================================================================================
-     * Source standard message object configuration and initialization:
-     * =======================================================================================================
-     *  - load default CAN message object configuration into configuration structure
-     *
-     *  - define the message object ID (each message object ID value should be unique)
-     *  - define the CAN message ID used during arbitration phase (same as ID used for gateway source MO)
-     *  - define the message object as a transmit message object
-     *
-     *  - initialize the source standard CAN message object with the modified configuration
-     * -------------------------------------------------------------------------------------------------------
+    /* ==========================================================================
      * This CAN message object is assigned to CAN Node 2
-     * =======================================================================================================
+     * ==========================================================================
      */
     IfxMultican_Can_MsgObj_initConfig(&g_multican.canMsgObjConfig, &g_multican.canNode[2]);
 
@@ -1092,21 +1040,10 @@ void initMultican(void)
 
     IfxMultican_Can_MsgObj_init(&g_multican.canSrcMsgObj, &g_multican.canMsgObjConfig);
 
-    /* =======================================================================================================
+    /* ==========================================================================
      * Destination standard message object configuration and initialization:
-     * =======================================================================================================
-     *  - load default CAN message object configuration into configuration structure
-     *
-     *  - define the message object ID (different than the ID used for source MO)
-     *  - define the CAN message ID used during arbitration phase (same as ID used for gateway destination MO)
-     *  - define the message object as a receive message object
-     *  - enable interrupt generation in case of CAN message reception
-     *  - define interrupt node pointer to be used
-     *
-     *  - initialize the destination standard CAN message object with the modified configuration
-     * -------------------------------------------------------------------------------------------------------
      * This CAN message object is assigned to CAN Node 3
-     * =======================================================================================================
+     * ==========================================================================
      */
     IfxMultican_Can_MsgObj_initConfig(&g_multican.canMsgObjConfig, &g_multican.canNode[3]);
 
@@ -1123,21 +1060,26 @@ void initMultican(void)
 </div>
 </details>
 
+- CAN Node RX 인터럽트 우선순위 설정
+- CAN Node 공통 설정: 루프백 모드 
+- CAN Node 0의 Message Object 설정 및 gateway source 설정 
+  - FIFO 개수 설정 (2개)
+  - RX Message object 설정(CAN BUS로 들어오는 데이터를 받기 위함)
+  - FIFO의 첫번째 slave object를 TX FIFO base object 다음 첫번째 메세지로 설정
+  - 게이트웨이 전송 활성화(게이트웨이 소스 개체 정의)
+  - 게이트웨이로 전송할 데이터 정의(id 빼고 복사해서 사용)
+- CAN Node 1의 Message Object 설정 및 gateway destination 설정
+  - FIFO로 받는 MO 설정
+- CAN Node 2 설정: Tx Message Object
+- CAN Node 3 설정: Rx Message Object 
+
+
 #### 2.2.3.3. Transmit CAN Message
 <details>
 <summary><strong>Source Code(Click)</strong></summary>
 <div markdown="1">
 
 ```c
-/* Function to initialize and transmit CAN messages.
- * Before a CAN message is transmitted, a number of CAN messages need to be initialized.
- * The user can change the number of CAN messages by modifying NUMBER_OF_CAN_MESSAGES macro value.
- * The TX messages (messages that are transmitted) are initialized with the combination of predefined
- * content and current CAN message value. The RX messages (messages where the received CAN data is stored)
- * are initialized with invalid ID, data and length value (after successful CAN transmission,
- * the values are replaced with the valid content). After each CAN message transmission, a code execution waits
- * until the received data has been read by the interrupt service routine.
- */
 void transmitCanMessages(void)
 {
     /* Invalidation of the RX messages */
@@ -1165,8 +1107,7 @@ void transmitCanMessages(void)
         {
         }
 
-        /* Wait until previously transmitted data has been received in the destination message object
-         * and no error has been detected. If the code execution stops at this point, check the "g_status" variable.
+        /* Wait until previously transmitted data has been received in the destination message object and no error has been detected. If the code execution stops at this point, check the "g_status" variable.
          */
         while(g_isrRxCount == g_currentCanMessage)
         {
@@ -1179,6 +1120,14 @@ void transmitCanMessages(void)
 </div>
 </details>
 
+- CAN Message 초기화
+  - Rx message data: invalid data
+  - Tx message data: long frame data
+    - message data content의 모든 바이트를 하나하나 설정
+- CAN BUS가 Not busy 일때 메세지 송신
+  - DLC8 이하면 Standard frame으로 송신(`IfxMultican_Can_MsgObj_sendMessage`)
+- 메세지가 수신될까지(Rx ISR이 불릴때까지) 대기
+
 #### 2.2.3.4. Verify Can Message 
 
 <details>
@@ -1186,13 +1135,6 @@ void transmitCanMessages(void)
 <div markdown="1">
 
 ```c
-/* Function to verify CAN messages.
- * After all the expected messages have been received, several checks are performed.
- * The current CUR pointer of the gateway source object is compared against expected CUR pointer value.
- * Similarly, the value of the gateway destination object (TX FIFO base object) is also checked.
- * Finally, the received data is compared to expected data and LED1 is turned on to indicate successful usage of
- * gateway and FIFO functionality of MultiCAN+ module.
- */
 void verifyCanMessages(void)
 {
     Ifx_CAN_MO *hwObj;
@@ -1263,6 +1205,11 @@ void verifyCanMessages(void)
 </div>
 </details>
 
+- 메세지를 수신한뒤 아래 확인
+  - source, destination object 값 비교
+  - Tx, Rx Message ID 비교 
+  - Data Length 및 실제 데이터 값 비교 
+- 다 일치하면 LED 점등. 하나라도 실패하면 에러 리턴(g_status)
 
 ### 2.2.4. MULTICAN using RX FIFO
 MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infineon-AURIX_MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR-Training-v01_00-EN.pdf?fileId=5546d4627a0b0c7b017a586853b24cc3))
