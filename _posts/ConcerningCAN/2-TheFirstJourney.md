@@ -1214,6 +1214,8 @@ void verifyCanMessages(void)
 ### 2.2.4. MULTICAN using RX FIFO
 MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infineon-AURIX_MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR-Training-v01_00-EN.pdf?fileId=5546d4627a0b0c7b017a586853b24cc3))
 
+![rx-fifo-graphical-representation](../../assets/postsAssets/ConcerningCAN/multican_rx_fifo_graphical_representation.png)
+
 - RX FIFO 구조를 만들고 노드간 데이터를 교환한다.
 - 예제 동작
   1. Node 0 에서 데이터를 보낸다.
@@ -1231,6 +1233,27 @@ MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infineo
 <div markdown="1">
 
 ```c
+IfxCpu_syncEvent g_cpuSyncEvent = 0;
+
+int core0_main(void)
+{
+    IfxCpu_enableInterrupts();
+    
+    IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
+    IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
+    
+    IfxCpu_emitEvent(&g_cpuSyncEvent);
+    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
+    
+    initMultican();
+    transmitCanMessages();
+
+    while(1)
+    {
+    }
+    return (1);
+}
+
 ```
 </div>
 </details>
@@ -1250,28 +1273,125 @@ MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infineo
 <div markdown="1">
 
 ```c
+void initMultican(void)
+{
+    Ifx_CAN_MO *hwObj;
+
+    /* ==========================================================================================
+     * CAN module configuration and initialization:
+     * ==========================================================================================
+     */
+    IfxMultican_Can_initModuleConfig(&g_multican.canConfig, &MODULE_CAN);
+
+    g_multican.canConfig.nodePointer[OVERFLOW_INTERRUPT_SRC_ID].priority = ISR_PRIORITY_CAN_OVERFLOW;
+    g_multican.canConfig.nodePointer[OVERFLOW_INTERRUPT_SRC_ID].typeOfService = ISR_PROVIDER_CAN_OVERFLOW;
+
+    IfxMultican_Can_initModule(&g_multican.can, &g_multican.canConfig);
+
+    /* ==========================================================================================
+     * Common CAN node configuration and initialization:
+     * ==========================================================================================
+     */
+    IfxMultican_Can_Node_initConfig(&g_multican.canNodeConfig, &g_multican.can);
+
+    g_multican.canNodeConfig.loopBackMode = TRUE;
+
+    /* ===================================================================
+     * CAN node 0 configuration and initialization:
+     * ===================================================================
+     */
+    g_multican.canNodeConfig.nodeId = IfxMultican_NodeId_0;
+
+    IfxMultican_Can_Node_init(&g_multican.canNode0, &g_multican.canNodeConfig);
+
+    /* ===================================================================
+     * CAN node 1 configuration and initialization:
+     * ===================================================================
+    */
+    g_multican.canNodeConfig.nodeId = IfxMultican_NodeId_1;
+
+    IfxMultican_Can_Node_init(&g_multican.canNode1, &g_multican.canNodeConfig);
+
+    /* ===================================================================
+     * Source standard message object configuration and initialization:
+     * This CAN message object is assigned to CAN Node 0
+     * ===================================================================
+     */
+    IfxMultican_Can_MsgObj_initConfig(&g_multican.canMsgObjConfig, &g_multican.canNode0);
+
+    g_multican.canMsgObjConfig.msgObjId = SRC_MESSAGE_OBJECT_ID;
+    g_multican.canMsgObjConfig.messageId = CAN_MESSAGE_ID;
+    g_multican.canMsgObjConfig.frame = IfxMultican_Frame_transmit;
+
+    IfxMultican_Can_MsgObj_init(&g_multican.canSrcMsgObj, &g_multican.canMsgObjConfig);
+
+    /* ===================================================================
+     * RX FIFO structure configuration and initialization:
+     * This CAN message object is assigned to CAN Node 1
+     * ===================================================================
+     */
+    IfxMultican_Can_MsgObj_initConfig(&g_multican.canMsgObjConfig, &g_multican.canNode1);
+
+    g_multican.canMsgObjConfig.msgObjId = RX_FIFO_BASE_OBJECT_ID;
+    g_multican.canMsgObjConfig.messageId = CAN_MESSAGE_ID;
+    g_multican.canMsgObjConfig.msgObjCount = RX_FIFO_SIZE;
+    g_multican.canMsgObjConfig.frame = IfxMultican_Frame_receive;
+    g_multican.canMsgObjConfig.firstSlaveObjId = SLAVE_MESSAGE_OBJECT_ID;
+
+    IfxMultican_Can_MsgObj_init(&g_multican.canDstMsgObj, &g_multican.canMsgObjConfig);
+
+    hwObj = IfxMultican_MsgObj_getPointer(g_multican.can.mcan, RX_FIFO_BASE_OBJECT_ID);
+    IfxMultican_MsgObj_setOverflowInterrupt(hwObj, TRUE);
+    IfxMultican_MsgObj_setTransmitInterruptNodePointer(hwObj, OVERFLOW_INTERRUPT_SRC_ID);
+    IfxMultican_MsgObj_setSelectObjectPointer(hwObj, SLAVE_MESSAGE_OBJECT_ID);
+}
+
+
 ```
 </div>
 </details>
 
-#### 2.2.4.3. Transmit CAN Message
+- 인터럽트 우선순위 설정. 
+  - overflow ISR
+- 루프백 모드 설정
+- Message Object 설정
+- CAN Node 0: TX
+  - RX FIFO Base object와 같은 CAN Message ID 로 설정 
+- CAN Node 1: RX
+  - FIFO 크기 3
+- Overflow 인터럽트 활성화
+
+#### 2.2.4.3. core1_main
 
 <details>
 <summary><strong>Source Code(Click)</strong></summary>
 <div markdown="1">
 
 ```c
-```
-</div>
-</details>
+extern IfxCpu_syncEvent g_cpuSyncEvent;
+boolean g_allMessagesReceived = FALSE;
 
-#### 2.2.4.4. core1_main
+int core1_main(void)
+{
+    IfxCpu_enableInterrupts();
+    
+    IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
+    
+    IfxCpu_emitEvent(&g_cpuSyncEvent);
+    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
 
-<details>
-<summary><strong>Source Code(Click)</strong></summary>
-<div markdown="1">
+    initLed();
 
-```c
+    while(!g_allMessagesReceived)
+    {
+    }
+    verifyCanMessages();
+
+    while(1)
+    {
+    }
+    return (1);
+}
 ```
 </div>
 </details>
@@ -1281,38 +1401,163 @@ MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infineo
 - Core 동기화
 - CAN 예제 구동시 필요한 코드
   - LED 모듈 초기화: LED1(pin00.5) 설정
-  - 메세지 갯수 확인
+  - 메세지 갯수 확인 
   - 메세지 검증
     - 메세지가 제대로 전송 된 경우 LED ON
 - (꺼지지 않도록) 무한 루프
 
-#### 2.2.4.5. Interrupt Service Routines for RX
+#### 2.2.4.4. Interrupt Service Routines for RX
 
 <details>
 <summary><strong>Source Code(Click)</strong></summary>
 <div markdown="1">
 
 ```c
+IFX_INTERRUPT(canIsrOverflowHandler, 1, ISR_PRIORITY_CAN_OVERFLOW);
+
+void canIsrOverflowHandler(void)
+{
+    IfxMultican_Status readStatus;
+    uint8 currentCanMessage;
+    static volatile uint8 numOfReceivedMessages = 0;
+
+    for(currentCanMessage = 0; currentCanMessage < RX_FIFO_SIZE; currentCanMessage++)
+    {
+        /* Read the received CAN message and store the status of the operation */
+        readStatus = IfxMultican_Can_MsgObj_readMessage(&g_multican.canDstMsgObj, &g_multican.rxMsg[numOfReceivedMessages]);
+
+        /* If no new data has been received, report an error */
+        if(readStatus != IfxMultican_Status_newData)
+        {
+            g_status = CanCommunicationStatus_Error_noNewDataReceived;
+        }
+
+        /* If a new data has been received but one message was lost, report an error */
+        if(readStatus == IfxMultican_Status_newDataButOneLost)
+        {
+            g_status = CanCommunicationStatus_Error_newDataButOneLost;
+        }
+
+        /* If there was no error, increment the counter to indicate the number of successfully received CAN messages */
+        if (g_status == CanCommunicationStatus_Success)
+        {
+            numOfReceivedMessages++;
+
+            if(numOfReceivedMessages == NUMBER_OF_RECEIVED_MESSAGES)
+            {
+                g_allMessagesReceived = TRUE;
+            }
+        }
+    }
+}
 ```
 </div>
 </details>
 
-#### 2.2.4.6. Verify Can Message 
+- overflow 인터럽트가 발생되면 해당 함수 실행
+- FIFO 크기만큼 반복 수행
+  - 메세지 읽고 작업상태 저장 
+  - 수신한 데이터 없으면 에러 발생
+  - 데이터는 수신되었지만 잃어버렸으면 에러 발생
+- 모든 메세지 받았을 때 `g_allMessagesReceived` 를 `TRUE`로 변경
 
+#### 2.2.4.5. Verify Can Message 
 
 <details>
 <summary><strong>Source Code(Click)</strong></summary>
 <div markdown="1">
 
 ```c
+
+void verifyCanMessages(void)
+{
+    uint8 currentCanMessage;
+
+    for(currentCanMessage = 0; currentCanMessage < NUMBER_OF_RECEIVED_MESSAGES; currentCanMessage++)
+    {
+        /* Check if the received message ID does NOT match with the transmitted message ID.
+         * If this is the case, an error should be reported.
+         */
+        if(g_multican.rxMsg[currentCanMessage].id != CAN_MESSAGE_ID)
+        {
+            g_status = CanCommunicationStatus_Error_notExpectedMessageId;
+            break;
+        }
+
+        /* Check if the received message length does NOT match with the expected message length.
+         * If this is the case, an error should be reported.
+         */
+        if(g_multican.rxMsg[currentCanMessage].lengthCode != g_multican.canMsgObjConfig.control.messageLen)
+        {
+            g_status = CanCommunicationStatus_Error_notExpectedLengthCode;
+            break;
+        }
+
+        /* Finally, check if the received data does NOT match with the transmitted one
+         * If this is the case, an error should be reported.
+         */
+        if((g_multican.rxMsg[currentCanMessage].data[0] != (g_canInitialMessageData[0] | currentCanMessage)) ||
+            (g_multican.rxMsg[currentCanMessage].data[1] != (g_canInitialMessageData[1] | currentCanMessage)))
+        {
+            g_status = CanCommunicationStatus_Error_notExpectedData;
+            break;
+        }
+    }
+
+    for(/*...*/; currentCanMessage < NUMBER_OF_CAN_MESSAGES; currentCanMessage++)
+    {
+        /* Check if the received message ID does NOT match invalid ID value.
+         * If this is the case, an error should be reported.
+         */
+        if(g_multican.rxMsg[currentCanMessage].id != INVALID_ID_VALUE)
+        {
+            g_status = CanCommunicationStatus_Error_notExpectedMessageId;
+            break;
+        }
+
+        /* Check if the received message length does NOT match invalid length value.
+         * If this is the case, an error should be reported.
+         */
+        if(g_multican.rxMsg[currentCanMessage].lengthCode != INVALID_LENGTH_VALUE)
+        {
+            g_status = CanCommunicationStatus_Error_notExpectedLengthCode;
+            break;
+        }
+
+        /* Finally, check if a received data does NOT match invalid data value.
+         * If this is the case, an error should be reported.
+         */
+        if((g_multican.rxMsg[currentCanMessage].data[0] != INVALID_DATA_VALUE) ||
+            (g_multican.rxMsg[currentCanMessage].data[1] != INVALID_DATA_VALUE))
+        {
+            g_status = CanCommunicationStatus_Error_notExpectedData;
+            break;
+        }
+    }
+
+    /* If there was no error, turn on the LED1 to indicate correctness of the received messages */
+    if(g_status == CanCommunicationStatus_Success)
+    {
+        IfxPort_setPinLow(g_led1.port, g_led1.pinIndex);
+    }
+}
+
+
 ```
 </div>
 </details>
 
+- 모든 메세지를 받은 이후에 실행되는 함수 
+  - 메세지 ID 확인
+  - 메세지 길이 확인
+  - 데이터 확인
+- for 반복문이 두번 있음
+  - 첫번째 반복문에선 실제 수신한 데이터와 예상한 데이터를 비교함
+  - 두번째 반복문에선 초기화 값이 변경되지 않았는지 확인함
+- 모두 확인하고 에러가 없는 경우 LED 점등
 
-#### 2.2.4.7. 궁금한점
-1. 멀티 코어를 사용하는데 여기선 모듈간 설정값을 따로 따로 설정하지 않아도 되는건지?
-
+#### 2.2.4.6. 궁금한점
+1. 코어별로 모듈을 설정하지 않아도 되는건지?
 
 ### 2.2.5. Summary of MULTICAN
 
@@ -1337,7 +1582,7 @@ MULTICAN_RX_FIFO_1_KIT_TC275_LK-TR ([Link](https://www.infineon.com/dgdl/Infineo
 #### 2.2.5.3. 추가 질문
 
 1. 내부 통신(루프백 모드)이 아닌 외부로 통신하기 위한 방법?
-2. 인터럽트를 사용하지않고 CAN 송수신 가능한지? (Polling )
+2. 인터럽트를 사용하지않고 CAN 송수신 가능한지? (Polling)
 3. 외부 통신일때 디버깅 하는 방법? 오실로스코프, 로직분석기
 4. CAN 통신 장치를 만드는 방법? RPi with CAN HAT(or CAN Shield)
 
