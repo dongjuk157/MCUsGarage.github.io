@@ -1556,40 +1556,50 @@ void verifyCanMessages(void)
   - 두번째 반복문에선 초기화 값이 변경되지 않았는지 확인함
 - 모두 확인하고 에러가 없는 경우 LED 점등
 
-#### 2.2.4.6. 궁금한점
-1. 코어별로 모듈을 설정하지 않아도 되는건지?
 
 ### 2.2.5. Summary of MULTICAN
 
 #### 2.2.5.1. 예제 요약 정리
 2.2.1 부터 2.2.5까지의 내용 요약(배울수 있는 것)
 
-1. 메세지 송수신
-   - CAN Node 설정
-   - CAN 프로토콜 설정(CAN, CANFD)
-   - Message Object 설정
-   - TX FIFO(Gateway), RX FIFO 설정
-2. 인터럽트 설정
+1. CAN Node 설정
+2. CAN 프로토콜 설정: CAN, CANFD
+3. Message Object 설정
+4. 인터럽트 설정: 우선순위 설정 및 인터럽트 루틴 함수 연결 
+5. Gateway 사용 
+6. TX FIFO 설정 
+7. RX FIFO 설정
 
 
-#### 2.2.5.2. 레지스터 
+#### 2.2.5.2. Deep Dive in API  
 
-1. Multican 을 사용할때 쓰는 레지스터
-   - 공통적으로 어떤 레지스터를 써서 모드를 바꾸는지
+Multican 을 사용할때 쓰는 레지스터
+- 공통적으로 사용한 API에 대해서 확인
+- 어떤 레지스터를 써서 모드를 바꾸는지 
+- iLLD 매뉴얼과 유저 매뉴얼 어디를 확인하면 되는지 확인.
 
-2. iLLD 매뉴얼, 유저 매뉴얼 보는 법
+## 2.3. Additional Implementation of Communication
 
-#### 2.2.5.3. 추가 질문
+### 2.3.1. How to add Message Objects
 
-1. 내부 통신(루프백 모드)이 아닌 외부로 통신하기 위한 방법?
-2. 인터럽트를 사용하지않고 CAN 송수신 가능한지? (Polling)
-3. 외부 통신일때 디버깅 하는 방법? 오실로스코프, 로직분석기
-4. CAN 통신 장치를 만드는 방법? RPi with CAN HAT(or CAN Shield)
+[Message Object 설명](#252-differences-between-multican-and-mcmcanmcan)
+
+### 2.3.2. How to communicate in CAN Normal Mode (not Loopback mode)
+
+내부 통신(루프백 모드)를 사용하지 않을 때의 설정 
 
 
-## 2.3. Implementation of Communication with User Manual
+### 2.3.8. How to debug in CAN Normal Mode
+외부 통신일때 디버깅 하는 방법
+- 오실로스코프
+- 로직분석기
 
-뭘 만들어볼까
+### 2.3.9. How to make a communication device 
+CAN 통신 장치를 만드는 방법
+- Raspberry Pi 3B+ 
+- RS 485 CAN Shield
+
+
 
 ## 2.4. CAN Communication Using TC3xx Application Kit
 
@@ -1669,11 +1679,20 @@ iLLD - Infineon Low Level Driver [Link](https://www.infineon.com/dgdl/Infineon-A
 
 1. About MULTICAN
    - Block Diagram
-   - Message object?
+   - Message object
+     - MULTICAN의 Message Object는 CAN 메시지 전송 및 수신을 위한 메모리 영역입니다. 
+     - 각 Message Object는 다음과 같은 정보를 포함합니다:
+     - Message Data: 전송하거나 수신할 실제 데이터(최대 8바이트)가 저장됩니다.
+     - Message ID: CAN 메시지를 식별하는 고유한 ID 값입니다. 표준 ID(11비트)와 확장 ID(29비트)가 있습니다. 
+     - Control Bits: 메시지 전송 모드(데이터 전송/원격 요청), 데이터 길이, 전송 시도 횟수 등을 제어하는 비트 필드입니다.
+     - Status Bits: 전송 완료, 수신 완료, 전송 오류 등의 상태 정보를 나타내는 비트 필드입니다.
+     - MULTICAN은 여러 개의 Message Object를 가지고 있으며, 이를 통해 다수의 CAN 메시지를 동시에 처리할 수 있습니다. 개발자는 Message Object를 구성하여 CAN 통신을 수행하고, 인터럽트 및 폴링 방식으로 메시지 전송/수신 상태를 모니터링합니다.
+     - Message Object는 CAN 컨트롤러 내부에서 메시지를 처리하기 위한 메모리 구조라고 할 수 있습니다.(CAN Frame은 실제 전송되는 비트 스트림입니다.)
 
 2. About MCMCAN
    - Block Diagram
    - MCAN?
+   - multicast, multi drop?
 
 3. Differences
 
