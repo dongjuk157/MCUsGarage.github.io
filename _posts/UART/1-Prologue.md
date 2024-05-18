@@ -2,7 +2,7 @@
 
 Concept of UART
 
-# 1.1 Introduce UART
+## 1.1. Introduce UART
 
 > UART 는 1960년에 Gordon Bell at Digital Equipment Corporation에 의해 개발된 비동기식 범용 통신 프로토콜.
 > Universal은 데이터 포맷, 통신 속도가 설정 가능하다는 의미, 전송과 수신이 순차적으로 동작하는 특성(Async) 때문에 UART라는 이름을 가지게 되었다.
@@ -11,7 +11,8 @@ Concept of UART
 > ![최초의UART](https://spectrum.ieee.org/media-library/wd1402a-uart-chip.jpg?id=25583276&width=2400&height=1800)
 <b> 최초의 UART chip WD1402A (출처 - ieee Chip Hall of Fame: Western Digital WD1402A UARTs) </b>
 
-## 특징
+### 특징
+
 ![UART 회로도 구성](https://www.analog.com/en/_/media/images/analog-dialogue/en/volume-54/number-4/articles/uart-a-hardware-communication-protocol/335962-fig-01.svg?h=270&hash=B065CFBC64504A18E932D2B8A4FA62EF&rev=a39d7f916b404552967cc0579b7c0639)
 <b> UART 회로도 구성 (출처 - analog.com) </b>
 
@@ -52,16 +53,17 @@ UART는 비동기식, 1대1 방식의 시리얼 통신 버스이다.
 - **직렬 통신**: 데이터가 비트 단위로 직렬 전송됨.
 - **양방향 통신**: Full-duplex 모드를 지원하여 송신과 수신이 동시에 가능함.
 
-## 장/단점
+### 장/단점
 
 UART 통신은 아래와 같은 장/단점을 가짐.
 
-### 장점
+#### 장점
+
 - **간단한 구현**: 별도의 클럭 신호가 필요 없어 회로 구현이 간단합니다.
 - **낮은 비용**: 추가적인 하드웨어가 필요 없어서 비용이 저렴합니다.
 - **유연성**: 다양한 보드레이트와 데이터 형식을 지원합니다.
 
-### 단점
+#### 단점
 
 - **짧은 전송 거리**: 전송 거리가 타 통신 방식 대비 짧음.(TTL의 경우 1m 이내 권장)
 - **속도 제한**: 동기식 통신 방식보다 전송 속도가 낮음.
@@ -74,15 +76,17 @@ UART 통신은 아래와 같은 장/단점을 가짐.
 - PLC 통신
 - 로봇 컨트롤러 등
 
-## 동작 구조
+### 동작 구조
 
-### Physical Layer
+#### Physical Layer
+
 ![UART 회로도 구성](https://www.analog.com/en/_/media/images/analog-dialogue/en/volume-54/number-4/articles/uart-a-hardware-communication-protocol/335962-fig-01.svg?h=270&hash=B065CFBC64504A18E932D2B8A4FA62EF&rev=a39d7f916b404552967cc0579b7c0639)
 <b> UART 회로도 구성 (출처 - analog.com) </b>
 
 UART 통신의 물리적 계층은 TX (Transmit)와 RX (Receive) 두 개의 라인으로 구성됨. 데이터는 TX 라인을 통해 송신되고, RX 라인을 통해 수신됨. 이러한 단순한 구성 덕분에 UART는 다양한 응용 분야에서 쉽게 구현할 수 있음.
 
-### 기본 통신 방식
+#### 기본 통신 방식
+
 ![UART 프레임 구성](https://www.analog.com/en/_/media/images/analog-dialogue/en/volume-54/number-4/articles/uart-a-hardware-communication-protocol/335962-fig-03.svg?h=270&hash=1CB514C169E8D354B2D74F94776ADF96&rev=ad33a0f741fd40a79887152fcf0b7944)
 <b> UART 프레임 구성 (출처 - analog.com) </b>
 

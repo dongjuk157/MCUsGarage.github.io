@@ -1,7 +1,12 @@
+
 # 2. Bring-up
-# 2.1 Hardware Scheme
-# 2.2 Simple Example of UART
+
+## 2.1. Hardware Scheme
+
+## 2.2. Simple Example of UART
+
 ### 예제 코드
+
 - UART는 단순한 HW 구성, 프레임 구성 만큼이나 소스코드의 구현도 간단함.
 - Infineon TC275 마이크로컨트롤러를 사용하여 UART 통신을 설정하는 과정은 다음과 같음:
 
