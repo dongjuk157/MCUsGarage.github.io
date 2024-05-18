@@ -1,11 +1,11 @@
 # 1. Prologue
 Concept of CAN
 
-# 1.1. Concerning CAN
+## 1.1. Concerning CAN
 
 > CAN은 자동차 산업 분야에 적용하기 위해 고안된 직렬 통신 프로토콜이다.
 
-## 특징
+### 특징
 
 CAN은 Multi Master Network 이고 일반적으로 버스 형태로 네트워크를 형성한다.
 - 이론적으로는 2032 개의 서로 다른 디바이스 (임베디드 컨트롤러) 를 하나의 네트워크상에 연결하여 통신을 수행할 수 있음
@@ -16,19 +16,19 @@ Twist Pair Wire를 사용한다.
 반이중 통신 (Half Duplex) 방식을 사용해서 메세지를 전송한다. 
 - CSMA/CD+AMP (Carrier Sense Multiple Access / Collision Detection with Arbitration on Message Priority) 방식
 
-## 동작 원리
+### 동작 원리
 1. 메시지 송신 전에 CAN 버스 라인이 사용 중인지 파악한다.
 2. 사용 중이지 않으면 메세지를 보내고 사용 중이면 기다린다.
    - 메세지가 충돌날 수 있지만 우선순위를 비교해서 한 노드만 남고 나머지 노드는 수신하면서 다음 차례를 기다린다.
 3. 메세지를 수신한 모든 노드는 ID를 확인해서 필요한 메세지만 받고 나머지는 무시한다.
    - CAN 네트워크에서 각각의 노드를 식별할 수 있도록 각 노드 마다 유일한 식별자(11bit 또는 29bit)를 갖는다.
 
-## 종류
+### 종류
 HS CAN(ISO 11898): 1Mbps 이상의 고속 통신 가능, 고속통신
 
 LS CAN(ISO 11519): 125Kbps 까지의 통신 가능,  노이즈 강인성
 
-## 호환성
+### 호환성
 
 Standard CAN(CAN 2.0A) Controller 는 standard CAN 포맷 방식의 메시지만 송수신이 가능하다.
 - CAN 2.0 이전 사양(1.x)도 서로 통신할 수 있다
@@ -37,7 +37,7 @@ Standard CAN(CAN 2.0A) Controller 는 standard CAN 포맷 방식의 메시지만
 Extended CAN(CAN 2.0B) Controller 는 Standard, Extended 메시지 포맷 모두 송수신 가능하다.
 - 만약 데이터 프레임이 standard와 extended 모두 같은 Base ID (첫 11 비트)를 가지면 Standard 데이터 프레임으로 인식한다. (SRR은 RTR 1로 인식)
 
-## Layer
+### Layer
 
 CAN은 여러 계층으로 세분화되어있다. Classic CAN에서 layer는 다음과 같다
 
@@ -125,9 +125,9 @@ CAN은 여러 계층으로 세분화되어있다. Classic CAN에서 layer는 다
 - 상위 레이어는 다른 프로토콜을 사용해도 된다. (ex. XCP, UDS)
 
 
-## CAN Frame Types
+### CAN Frame Types
 
-### Data Frame
+#### Data Frame
 데이터를 전달하기 위한 메세지.
 
 <table>
@@ -233,13 +233,13 @@ Standard 와의 호환
 
 
 
-### Remote Frame
+#### Remote Frame
 
 재전송을 요청하는 프레임이다. 
 
 전체적으로 Data Frame과 비슷하지만 RTR 비트가 1이어야하고 데이터 필드가 없다.
 
-### Error Frame
+#### Error Frame
 
 버스 에러를 감지했을때 사용한다.
 
@@ -270,7 +270,7 @@ ERROR FLAG 전송 후 각 스테이션은 'recessive' 비트를 전송하고 're
 </table>
 
 
-### Overload Frame
+#### Overload Frame
 
 프레임 사이에 추가 딜레이를 요청할때 사용한다.
 
@@ -296,7 +296,7 @@ ERROR FLAG 전송 후 각 스테이션은 'recessive' 비트를 전송하고 're
     </tr>
 </table>
 
-### Interframe Spacing
+#### Interframe Spacing
 
 메세지 프레임을 구분하기 위한 장치
 - Data Frame 및 Remote Frame은 interframe spacing을 통해 이전 프레임과 구분된다.
@@ -338,14 +338,14 @@ ERROR FLAG 전송 후 각 스테이션은 'recessive' 비트를 전송하고 're
 
 해당 프레임이 끝나면 CAN 버스라인은 IDLE 상태로 인식된다.
 
-## Other things related to CAN 2.0A
+### Other things related to CAN 2.0A
 
-### Message Validation
+#### Message Validation
 메세지가 유효하다고 판단되는 시점
 - 송신기: 보내는 메세지의 EOF가 끝날 때까지 오류가 없는 경우
 - 수신기: 받는 메세지의 EOF가 마지막 1비트까지 오류가 없는 경우
 
-### Coding
+#### Coding
 Data Frame과 Remote Frame의 SOF 부터 CRC Sequence 까지만 bit stuffing이 사용된다.
 - bit stuffing: 연속되는 5개의 동일한 비트가 감지되면 자동으로 반대 비트를 섞어서 보내는 것.
 
@@ -357,7 +357,7 @@ Data Frame과 Remote Frame의 SOF 부터 CRC Sequence 까지만 bit stuffing이 
 
 출처 - 위키피디아
 
-### Error Handling
+#### Error Handling
 
 **Error Detection**
 
@@ -396,21 +396,21 @@ Fault Confinement 과 관련해서 송수신기는 아래 세 가지 상태 중�
 이러한 개수는 총 12개의 규칙에 따라 변경된다.
 - 자세한 내용은 can 스펙 참조
 
-## Other things related to CAN 2.0B
+### Other things related to CAN 2.0B
 
 웬만한건 CAN 2.0 A와 겹치므로 Extended CAN에만 있는 내용을 추가했다.
 
-### Message Filtering
+#### Message Filtering
 
 전체 식별자를 기반으로 필터링된다
 - 마스크 레지스터를 사용하여 연결된 수신 버퍼에 매핑할 식별자 그룹을 선택할 수 있다.
 - 마스크 레지스터의 모든 비트는 프로그래밍 가능해야 한다. (메시지 필터링을 위해 활성화하거나 비활성화할 수 있다.)
 
-# 1.2. Concerning CAN FD
+## 1.2. Concerning CAN FD
 
 CAN with Flexible Data-Rate
 
-## 특징
+### 특징
 
 CAN 2.0 프로토콜과 호환된다.
 - ISO 11898-1에 따라 모든 CAN 메세지를 송수신 할 수 있음
@@ -437,10 +437,10 @@ CAN 보다 빠르고 더 많은 비트를 전송할 수 있다.
 
 CAN FD에는 Remote Frame이 없다.
 
-# 1.3. Concerning CAN-based Protocols
+## 1.3. Concerning CAN-based Protocols
 CAN network는 Physical Layer와 Data Link Layer에 대한 내용이므로 상위 레이어는 다른 프로토콜을 섞어서 사용한다.
 
-## ISO TP
+### ISO TP
 
 ISO-TP - ISO 15765-2(자동차 진단용 전송 프로토콜) 
 물리적인 CAN의 길이(CAN 8Byte, CANFD 64Byte)보다 더 긴 메세지를 보내야하는 경우 사용한다.
@@ -454,9 +454,9 @@ ISO TP Frame Types
 4. Flow Control Frame(FC)
 
 
-## UDS on CAN
+### UDS on CAN
 
-### What is UDS
+#### What is UDS
 Unified diagnostic services (UDS)
 
 자동차 전자 제어 장치 (ECU) 에 사용되는 진단 통신 프로토콜이다.
@@ -480,7 +480,7 @@ Negative
 - CAN ID / Protocol Control Info(PCI) / Negative Response(SID): 0x7F / Rejected SID / NRC(Negative Response Code)
 
 
-### ISO Spec
+#### ISO Spec
 Road vehicles / Unified diagnostic services (UDS)
 - ISO 14229-1: Part 1: Application layer
 - ISO 14229-2: Part 2: Session layer services
@@ -494,16 +494,16 @@ Road vehicles / Diagnostic communication over Controller Area Network (DoCAN)
 HKMC - UDS
 - ES 95486-02
 
-## XCP
+### XCP
 
-### What is XCP
+#### What is XCP
 
 Universal Measurement and Calibration Protocol 
 
 https://cdn.vector.com/cms/content/application-areas/ecu-calibration/xcp/XCP_Book_V1.5_EN.pdf
 https://cdn.vector.com/cms/content/application-areas/ecu-calibration/xcp/XCP_ReferenceBook_V2.0_KO.pdf
 
-## Others
+### Others
 
 EnergyBus - CiA 454 및 IEC 61851-3(배터리-충전기 통신)
 
@@ -513,7 +513,7 @@ SAE J2284(승용차용 차량 내 네트워크)
 
 GMLAN - 제너럴 모터스(제너럴 모터스용)
 
-# 1.4. Note on the car industry history 
+## 1.4. Note on the car industry history 
 CAN 이전 Mesh 형 토폴로지 사용
 - GM사의 캐딜락
 
