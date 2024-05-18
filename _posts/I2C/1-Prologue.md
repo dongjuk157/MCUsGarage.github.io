@@ -2,11 +2,11 @@
 
 Concept of I2C
 
-# 1.1 Introduce I2C
+## 1.1. Introduce I2C
 
 > I2C 는 Philips Semicondoctors 에서 1982년에 개발된 통신 방식이다.
 
-## 특징
+### 특징
 
 ![회로도 구성](https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/I2C_controller-target.svg/1920px-I2C_controller-target.svg.png)
 
@@ -50,17 +50,17 @@ I2C는 동기식, multi-contoller/multi-target(즉 multi master/slave)방식의 
   </tr>
 </table>
 
-## 장/단점
+### 장/단점
 
 I2C 통신 프로토콜은 아래와 같은 장/단점을 가진다.
 
-### 장점
+#### 장점
 
 - SDA와 SCL 두 가닥의 선만으로 데이터 송수신이 가능함.
 - 동기식 통신이므로 비 동기식 통신인 UART 등에 비해 안정적임.
 - BUS 형태로 다수의 I2C Master과 다수의 I2C Slave 장치를 연결할 수 있음. (단 통신 클럭은 1개의 마스터 장치만 제공 가능함.)
 
-### 단점
+#### 단점
 
 - 속도가 느림 (표준 모드 기준 100kbps) UART 대비 빠르지만 SPI 대비 느리기 때문에 애매한 선택지인 경우가 많음. 그러나 최근 Fast I2C의 경우 최대 5Mbps까지 지원하는 경우도 있음.
 - 반이중 통신이기 때문에 한 노드에서 데이터를 보내는 중에는 나머지 노드에서 데이터를 보낼 수 없음.
@@ -72,12 +72,11 @@ I2C 통신 프로토콜은 아래와 같은 장/단점을 가진다.
 - 센서류
 - OLED, LCD 제어
 - DAC 및 ADC 장치 연결
-- EEPROM 연결 
+- EEPROM 연결
 
+### 동작 구조
 
-## 동작 구조
-
-### Physical Layer
+#### Physical Layer
 
 ![회로구성](https://upload.wikimedia.org/wikipedia/commons/2/27/Iicrp.png)  
 I2C Physical Layer (출처 - 위키피디아)
@@ -125,7 +124,8 @@ SDA Arbitartion (출처 - [digilent])
 - SMbus나 PMbus의 경우 추가적인 arbitration 로직이 존재함.
 - 이를 통해 I2C는 데이터 전송 중에 다수의 컨트롤러가 동시에 통신을 시도할 경우 arbitration 메커니즘을 사용하여 효과적으로 충돌을 방지하고 통신의 정확성을 보장할 수 있음.
 
-### I2C 통신 속도 별 모드
+#### I2C 통신 속도 별 모드
+
 - I2C 통신에는 여러 가지 운영 모드가 있으며, 이 모드들은 모두 100 kbit/s의 standard mode를 항상 사용할 수 있도록 호환됨.
 
 - Standard mode : 100 kbit/s 속도로 동작합니다. 모든 I2C 장치가 이 모드를 지원함.
@@ -135,7 +135,7 @@ SDA Arbitartion (출처 - [digilent])
 - Ultra Fast mode : 쓰기 전용의 I2C 모드, 5 Mbit/s 전송 속도를 달성하기 위해 항상 데이터 라인을 active 상태로 둠. clock stretching, arbitration, read transfer 및 ACK가 모두 생략됨. 주로 LED 디스플레이에 사용됨.
 - Non standard : 일부 제조업체가 최대 1.4 Mbit/s 속도로 제공하는 모드.
 
-### 기본 통신 방식
+#### 기본 통신 방식
 
 ![타이밍구성](https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/I2C_data_transfer.svg/600px-I2C_data_transfer.svg.png)  
 I2C 통신 타이밍 (출처 - 위키피디아)
@@ -151,7 +151,7 @@ I2C 통신 타이밍 (출처 - 위키피디아)
 ![Master Slave 간 통신 시퀀스](../assets/postsAssets/I2C/MS_comm.jpg)  
 Master Slave 간 통신 시퀀스 (출처 - Digikey)
 
-### Master to Slave (Write to Slave)
+#### Master to Slave (Write to Slave)
 
 1. Master가 Slave에 데이터를 Write할 경우 시작 신호 S 이후 7비트의 Slave 주소를 Write 한다.
 2. 이후 마지막 8번째 비트에 0을 Write한다.(마지막 bit가 0일 경우 Write 모드)
@@ -159,7 +159,7 @@ Master Slave 간 통신 시퀀스 (출처 - Digikey)
 4. 매 8비트마다 Master로부터 데이터가 송신되면 Slave는 ACK 신호(0)를 보낸다.
 5. 이후 데이터 전송이 전부 완료되면 마스터는 SCL을 High로 유지한 후 SDA를 High로 바꾼다.
 
-### Slave to Master (Read from Slave)
+#### Slave to Master (Read from Slave)
 
 1. Master가 Slave로부터 데이터를 Read 할 경우 시작 신호(S)이후 7비트의 Slave 주소를 Write 한다.
 2. 이후 마지막 8번째 비트에 1을 Write 한다(마지막 bit가 1일 경우 Read 모드) 
