@@ -36,6 +36,13 @@ Current Release
 
 ## 3.2.1 Transfer/Receive Data on CAN Flow
 
+CAN IF 는 데이터 길이가 CAN IF에서 보낼 수 있는 길이(classic can 8, can fd 64)보다 작거나 같을 때 사용되고, CAN TP 는 CAN IF에서 보낼 수 있는 데이터 길이보다 클 때 사용된다.
+- 다른 통신 모듈들도 비슷한 흐름을 가진다.
+
+1. Transfer Data
+   - ASW - RTE - COM - PduR - CAN TP - CAN IF - CAN Driver - Physical layer
+2. Receive Data
+   - Physical layer - CAN Driver - CAN IF - CAN TP - PduR - COM - RTE - ASW
 
 
 ## 3.3. How To Read Documents
@@ -63,36 +70,106 @@ Specification (명세):
 [AUTOSAR-SRS-CAN](https://www.autosar.org/fileadmin/standards/R23-11/CP/AUTOSAR_CP_SRS_CAN.pdf)
 
 ### 3.4.1. Functional Overview
-The CAN bus transceiver driver is responsible to handle the CAN transceivers on an ECU according to the expected state of the bus specific NM in relation to the current state of the whole ECU.
-The transceiver is a hardware device, which mainly transforms the logical on/off signal values of the µC ports to the bus compliant electrical levels, currents and timings.
-Within an automotive environment there are mainly three different CAN physics used. These physics are ISO11898 for high-speed CAN (up to 1Mbd), ISO11519 for low-speed CAN (up to 125kBd). Both are regarded in AUTOSAR, whereas SAE J2411 for single-wire CAN is not. CAN FD utilizes the same CAN physic as it is used for high-speed CAN but provide faster transmission rates.
-In addition, the transceivers are often able to detect electrical malfunctions like wiring issues, ground offsets or transmission of too long dominant signals. Depending on the interface they flag the detected error summarized by a single port pin or very detailed via SPI.
-Some transceivers also support power supply control and wakeup via the bus. A lot of different wakeup/sleep and power supply concepts are available on the market with focus to best-cost optimized solution for a given task.
-Latest developments are so called SystemBasisChips (SBC) where not only the CAN and/or LIN transceivers but also power-supply control and advanced watchdogs are implemented in one housing and are controlled via one interface (typically an SPI).
-A typical CAN transceiver is the TJA1054 for a low-speed CAN bus. The same state transition model is also used in TJA1041 (high-speed CAN with support for wakeup via CAN) and could be transferred also to a lot of other products on the market.
 
-Transceiver Wakeup Reason
- The transceiver driver is able to store the local view on who has requested the wakeup: bus or software.
+CAN bus 트랜시버 드라이버는 ECU의 CAN 트랜시버를 동작시켜 ECU의 현재 상태와 버스 상태를 맞추는 역할을 한다.
+트랜시버는 주로 마이컴 포트의 논리적 신호를 버스에 맞게 전기 레벨(특정 전압), 전류, 타이밍으로 변환시키는 장치이다.
 
-Bus: The bus has caused the wakeup.
-Internally: The wakeup has been caused by a software request to the driver.
-Sleep: The transceiver is in operation mode sleep and no wakeup has been occurred.
+트랜시버는 다음 기능을 지원한다.
+- HS CAN, LS CAN, CAN FD를 지원. SAE J2411(single-wire can)은 지원하지 않음
+- 전기 오작동 감지
+- 버스를 통한 전원 공급 제어 및 wakeup 지원
+- SBC(System Basis Chip)과의 통합
+
+트랜시버 wakeup 발생 원인 (누가 요청했는지 저장 가능)
+1. BUS: 버스가 wakeup을 유발함
+2. Internally: 드라이버에 대한 소프트웨어 요청으로 인해 발생함 
+3. Sleep: 슬립 모드에 있고 웨이크업이 발생하지 않음
+
+### 3.4.2. Remarks to the CAN Bus Transceiver Driver
+
+다양한 트랜시버가 있으므로 모든 기능에 대해서 지원하기 어려움. 적용 가능한 인터페이스와 동작만을 명세할 예정.
+- 적어도 버스 트랜시버 기능의 "사용자"가 버스에 독립적이도록 명세함. 재사용 할 수 있도록
+- 주로 AUTOSAR NM 이나 AUTOSAR Communication Manager 가 사용자임
+
+1. 추가기능 미지원
+   - 일부 CAN Trcv는 자체 테스트나 진단을 위한 기능을 제공함. 하지만 AUTOSAR는 이러한 기능을 일반적으로 요구하지 않음. 
+   - 즉, 저렴한 트랜시버도 사용할수 있음.
+2. 일반 API 불허 
+   - IOControl() 같은 general and open(개방형) API를 허용하지 않음
+3. SBC  
+   - SBC 에는 CAN Trcv 외에 전원 제어 및 안전 관련한 기능이 포함된 하드웨어가 추가 되어있음
+   - AUTOSAR 에서는 각 하드웨어 장치에 대해 별도의 인터페이스(관리/드라이버/핸들러)가 필요하지만 SBC 내부의 여러 기능을 독립적으로 처리하는 것은 어려움
+   - 따라서 AUTOSAR 준수 ECU에서 SBC를 사용하려면 각각의 도메인의 모든 API를 포함하는 전문화된 매니저/드라이버/핸들러를 사용해야함
 
 
-CAN 버스 트랜시버 드라이버는 전체 ECU의 현재 상태와 관련하여 특정 버스 NM의 예상 상태에 따라 ECU의 CAN 트랜시버를 처리하는 역할을 합니다.
-트랜시버는 주로 µC 포트의 논리적 온/오프 신호 값을 버스 호환 전기 레벨, 전류 및 타이밍으로 변환하는 하드웨어 장치입니다.
-자동차 환경에는 주로 세 가지 서로 다른 CAN 물리학이 사용됩니다. 이러한 물리학은 고속 CAN(최대 1Mbd)의 경우 ISO11898, 저속 CAN(최대 125kBd)의 경우 ISO11519입니다. 둘 다 AUTOSAR에서는 간주되지만 단일 와이어 CAN용 SAE J2411은 그렇지 않습니다. CAN FD는 고속 CAN에 사용되는 것과 동일한 CAN 물리학을 활용하지만 더 빠른 전송 속도를 제공합니다.
-또한 트랜시버는 배선 문제, 접지 오프셋 또는 너무 긴 주요 신호 전송과 같은 전기적 오작동을 감지할 수 있는 경우가 많습니다. 인터페이스에 따라 감지된 오류를 단일 포트 핀으로 요약하거나 SPI를 통해 매우 자세히 표시합니다.
-일부 트랜시버는 버스를 통한 전원 공급 제어 및 웨이크업도 지원합니다. 특정 작업에 대해 가장 비용이 최적화된 솔루션에 초점을 맞춘 다양한 웨이크업/슬립 및 전원 공급 장치 개념이 시장에 나와 있습니다.
-최신 개발은 CAN 및/또는 LIN 트랜시버뿐만 아니라 전원 공급 장치 제어 및 고급 감시 기능이 하나의 하우징에 구현되고 하나의 인터페이스(일반적으로 SPI)를 통해 제어되는 SBC(SystemBasisChips)라고 합니다.
-일반적인 CAN 트랜시버는 저속 CAN 버스용 TJA1054입니다. 동일한 상태 전이 모델은 TJA1041(CAN을 통한 웨이크업을 지원하는 고속 CAN)에도 사용되며 시중의 다른 많은 제품에도 전송할 수 있습니다.
 
-트랜시버 웨이크업 이유
-  트랜시버 드라이버는 웨이크업을 요청한 사람(버스 또는 소프트웨어)에 대한 로컬 보기를 저장할 수 있습니다.
+### 3.4.3. CAN Driver (CAN)
+#### Functional Requirements
 
-버스: 버스가 깨우기를 유발했습니다.
-내부적으로: 드라이버에 대한 소프트웨어 요청으로 인해 웨이크업이 발생했습니다.
-슬립(Sleep): 무전기가 슬립 작동 모드에 있고 웨이크업이 발생하지 않았습니다.
+[SRS_Can_01036] The CAN Driver shall support Standard Identifier and Extended Identifier
+[SRS_Can_01037] The CAN driver shall allow the static configuration of the hardware reception filter
+[SRS_Can_01038] The bit timing of each CAN Controller shall be configurable
+[SRS_Can_01039] Hardware Object Handles shall be provided for the CAN Interface in the static configuration file.
+[SRS_Can_01058] shall be configurable whether Multiplex Transmission is used
+[SRS_Can_01062] Each event for each CAN Controller shall be configurable to be detected by polling or by an interrupt
+[SRS_Can_01135] It shall be possible to configure one or several TX Hardware Objects
+
+[SRS_Can_01041] The CAN Driver shall implement an interface for initialization
+[SRS_Can_01042] The CAN Driver shall support dynamic selection of configuration sets
+
+[SRS_Can_01043] The CAN Driver shall provide a service to enable/disable interrupts of the CAN Controller.
+[SRS_Can_01059] The CAN Driver shall guarantee data consistency of received L-PDUs
+[SRS_Can_01045] The CAN Driver shall offer a reception indication service.
+[SRS_Can_01049] The CAN Driver shall provide a dynamic transmission request service
+[SRS_Can_01051] The CAN Driver shall provide a transmission confirmation service
+[SRS_Can_01053] The CAN Driver shall provide a service to change the CAN controller mode.
+[SRS_Can_01054] The CAN Driver shall provide a notification for controller wake-up events
+[SRS_Can_01122] The CAN driver shall support the situation where a wakeup by bus occurs during the same time the transition to standby/sleep is in progress
+[SRS_Can_01132] The CAN driver shall be able to detect notification events message object specific by CAN-Interrupt and polling
+[SRS_Can_01134] The CAN Driver shall support multiplexed transmission
+[SRS_Can_01147] The CAN Driver shall not support remote frames
+[SRS_Can_01161] The CAN Driver shall support CAN FD
+[SRS_Can_02001] The CAN Driver shall support CAN XL
+[SRS_Can_01167] The CAN Driver shall provide a function to return the current CAN controller error state
+[SRS_Can_01170] The CAN Driver shall provide a function to return the current CAN controller Rx and Tx error counters
+
+[SRS_Can_01166] The CAN Driver shall implement an interface for de-initialization
+
+[SRS_Can_01055] CAN Driver shall provide a notification for bus-off state
+[SRS_Can_01060] The CAN driver shall not recover from bus-off automatically
+
+#### Non-Functional Requirements
+[SRS_Can_01033] The CAN Driver shall fulfill the general requirements for Basic Software Modules as specified in AUTOSAR_SRS_SPAL
+[SRS_Can_01034] The CAN Driver shall offer a Hardware independent interface.
+[SRS_Can_01035] The CAN Driver shall support multiple CAN controllers of the same CAN hardware unit 
+
+
+### 3.4.4. CAN Interface(Hardware Abstraction) (CANIF)
+#### Functional Requirements
+
+#### Non-Functional Requirements
+
+### 3.4.5. CAN State Manager (CANSM)
+#### Functional Requirements
+
+#### Non-Functional Requirements
+
+### 3.4.6. Transport Layer CAN (CANTP)
+#### Functional Requirements
+
+#### Non-Functional Requirements
+
+### 3.4.7. CAN Bus Transceiver Driver (CAN TRCV)
+#### Functional Requirements
+
+#### Non-Functional Requirements
+
+### 3.4.8. CAN Driver and Interface together 
+
+#### Non-Functional Requirements
+
+
+
 
 
 ## 3.. CAN Drivier
