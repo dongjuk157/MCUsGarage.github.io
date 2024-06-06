@@ -12,7 +12,7 @@ In the ECU in the car there lived CAN.
 
 {% include_relative ConcerningCAN/2-TheFirstJourney.md %}
 
-{% include_relative ConcerningCAN/3-TheJourneyOfTheNineTools.md %}
+{% include_relative ConcerningCAN/3-TheJourneyOfTheNineCommunicationModules.md %}
 
 {% include_relative ConcerningCAN/4-TheTreasonOfAutosar.md %}
 

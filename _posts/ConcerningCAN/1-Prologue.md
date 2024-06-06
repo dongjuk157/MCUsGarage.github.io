@@ -1,45 +1,124 @@
 # 1. Prologue
-Concept of CAN
+
+자동차 내부 통신을 위해 가장 많이 사용되는 CAN 프로토콜에 대해서 배울 것이다.
+
+우선 CAN 프로토콜이 만들어지기 전의 상황을 간단하게 살펴보자.
+
+초기의 자동차는 엔진의 구동부터 바퀴의 회전까지 모든 과정이 기계적인 움직임에 의존했다. 그러나 자동차의 성능(출력, 연비 향상) 등의 이유로 제어를 전자적으로 하게 되면서 ECU(전자 제어 장치, Electronic Control Unit)가 도입되었다. 이때까지는 각 부품 별로만 통신이 필요했고 센서와 ECU 간에 Point-to-point(점대점, mesh network) 연결 방식으로 통신했다.
+
+자동차가 발전하면서 안전성이나 편의성 등의 요구가 증가했고 전자 제어가 필요한 부품들이 더욱 많아졌다. 이에 따라 통신해야할 데이터의 양도 늘어났고, ECU 끼리의 통신도 빈번해졌다. 기존의 Point-to-point 방식으로 통신을 하려면 모든 ECU 사이에 통신선을 놓아야했기 때문에 ECU가 늘어날수록 차량의 무게가 점점 더 무거워지는 문제가 발생했다. 따라서 무게를 크게 증가시키지 않으면서 여러 ECU 사이의 통신을 원활하게 할수 있는 통신 방식이 필요했다.
+
+이러한 요구에 BOSCH는 새로운 통신 방식을 개발했고 그 통신방식이 Controller Area Network(CAN)이다.
 
 ## 1.1. Concerning CAN
 
-> CAN은 자동차 산업 분야에 적용하기 위해 고안된 직렬 통신 프로토콜이다.
+> CAN은 자동차 산업 분야에 적용하기 위해 고안된 직렬 통신 프로토콜이다. <br>
+> 고속 데이터 전송과 신뢰성 높은 데이터 통신이 필요할때 사용된다. <br>
+> 차량의 엔진, 변속기 등 다양한 시스템이 CAN을 통해 데이터를 주고 받는다. <br>
 
-### 특징
+### CAN BUS
 
-CAN은 Multi Master Network 이고 일반적으로 버스 형태로 네트워크를 형성한다.
-- 이론적으로는 2032 개의 서로 다른 디바이스 (임베디드 컨트롤러) 를 하나의 네트워크상에 연결하여 통신을 수행할 수 있음
-- CAN 트랜시버 (송신기) 의 한계로 인하여 실제로 연결할수 있는 Node (통신 주체) 수는 적음
+**BUS Topology**
 
-Twist Pair Wire를 사용한다.
+CAN 프로토콜의 네트워크 구조를 살펴보기전에 일반적인 버스 네트워크에 대해서 설명하겠다.
 
-반이중 통신 (Half Duplex) 방식을 사용해서 메세지를 전송한다. 
-- CSMA/CD+AMP (Carrier Sense Multiple Access / Collision Detection with Arbitration on Message Priority) 방식
+<table>
+  <tr>
+    <th> General BUS </th>
+    <th> Add a Node in BUS</th>
+  </tr>
+  <tr>
+    <td> 
+    <image src="../assets/postsAssets/ConcerningCAN/BUS_Network_General.png" alt="general_BUS"/>
+    </td>
+    <td> 
+    <image src="../assets/postsAssets/ConcerningCAN/BUS_Network_General_2.png" alt="general_BUS_adding_a_node"/>
+    </td>
+  </tr>
+</table>
 
-### 동작 원리
-1. 메시지 송신 전에 CAN 버스 라인이 사용 중인지 파악한다.
-2. 사용 중이지 않으면 메세지를 보내고 사용 중이면 기다린다.
-   - 메세지가 충돌날 수 있지만 우선순위를 비교해서 한 노드만 남고 나머지 노드는 수신하면서 다음 차례를 기다린다.
-3. 메세지를 수신한 모든 노드는 ID를 확인해서 필요한 메세지만 받고 나머지는 무시한다.
-   - CAN 네트워크에서 각각의 노드를 식별할 수 있도록 각 노드 마다 유일한 식별자(11bit 또는 29bit)를 갖는다.
+우선 버스 네트워크의 특징은 확장에 유리하다. 
+- 새로운 노드(데이터를 송수신할 수 있는 최소 장치)를 추가할 때 기존 네트워크에 연결만 하면 된다. 
+- 이론적으로는 무한정 노드를 추가할수 있다.
 
-### 종류
-HS CAN(ISO 11898): 1Mbps 이상의 고속 통신 가능, 고속통신
+버스 네트워크는 Multi Master Network 이고 노드간 통신은 Half-duplex 방식이다. 
+- 어떤 노드든 마스터가 되어 데이터를 보낼수 있고 무전기처럼 양방향으로 통신이 가능하나 동시에 송수신은 불가능 하다.
+- 즉, 한 노드가 데이터를 송신하면 나머지 노드는 데이터를 수신하는 관계가 된다. 
 
-LS CAN(ISO 11519): 125Kbps 까지의 통신 가능,  노이즈 강인성
+여러 노드가 동시에 데이터를 전송해서 데이터를 사용하지 못하는 경우(충돌,collision)도 발생할 수 있다.
+- 이를 해결하기 위해 우선 순위나 Media Access Control(MAC, 매체 액세스 제어)를 사용한다.
 
-### 호환성
+<details>
+<summary><strong>point-to-point 방식과 비교(Click)</strong></summary>
 
-Standard CAN(CAN 2.0A) Controller 는 standard CAN 포맷 방식의 메시지만 송수신이 가능하다.
-- CAN 2.0 이전 사양(1.x)도 서로 통신할 수 있다
-- Extended CAN 메시지를 수신하면 데이터를 무시한다
+<div markdown="1">
 
-Extended CAN(CAN 2.0B) Controller 는 Standard, Extended 메시지 포맷 모두 송수신 가능하다.
-- 만약 데이터 프레임이 standard와 extended 모두 같은 Base ID (첫 11 비트)를 가지면 Standard 데이터 프레임으로 인식한다. (SRR은 RTR 1로 인식)
+<table>
+  <tr>
+    <th> General BUS </th>
+    <th> Add a Node in BUS</th>
+  </tr>
+  <tr>
+    <td> 
+    <image src="../assets/postsAssets/ConcerningCAN/P2P_1.png" alt="point-to-point"/>
+    </td>
+    <td> 
+    <image src="../assets/postsAssets/ConcerningCAN/P2P_2.png" alt="point_to_point_adding_a_node"/>
+    </td>
+  </tr>
+</table>
 
-### Layer
+point-to-point 방식은 다른 노드와 통신하기 위해서 필요한 노드간에 통신선을 놓아야한다.
+- 노드가 많을수록 새로운 노드를 위해 추가되는 통신선의 양이 많아진다.
 
-CAN은 여러 계층으로 세분화되어있다. Classic CAN에서 layer는 다음과 같다
+통신 방식은 Half-Duplex 방식이지만 네트워크가 겹치지 않으므로 여러 노드에서 한 노드로 데이터를 보낼수 있다.
+
+</div>
+</details>
+
+**CAN BUS** 
+
+<table>
+  <tr>
+    <th> General BUS </th>
+    <th> CAN BUS </th>
+  </tr>
+  <tr>
+    <td> 
+    <image src="../assets/postsAssets/ConcerningCAN/BUS_Network_General.png" alt="general_BUS"/>
+    </td>
+    <td> 
+    <image src="../assets/postsAssets/ConcerningCAN/BUS_Network_CAN.png" alt="CAN_BUS"/>
+    </td>
+  </tr>
+</table>
+
+CAN은 BUS 구조이다. 위의 일반적인 BUS의 특성을 갖는다. 
+- 이론적으론 무한한 노드를 연결할 수 있다. 실질적으론 버스 라인의 지연 시간과 전기 부하에 의해 갯수가 제한된다.
+- 오래된 CAN Controller와 통신하는 CAN 노드 한정으로 서로 다른 identifier를 가진 노드는 최대 2032개만 연결할수 있다. 2032 = 2^11 - 2^4
+  -  2.0A 기준 ID bit가 11개이므로 ID가 서로 다른 노드는 2^11개이다.
+  -  1980년대 Intel CAN 컨트롤러(82526)는 최상위 7bit가 모두 1이면 안된다고 한다. 이 컨트롤러와 호환을 위해 2^(11-7)= 2^4개의 ID는 사용하지 못한다.
+
+CAN은 연선 방식(Twisted Pair)의 와이어를 사용하고 차동 신호 방식(Differential Signaling)을 사용하여 데이터를 전송한다. 
+- 연선 방식의 와이어는 잡음(noise)과 간섭(EMI)을 방지한다. 
+- 두 개의 와이어는 각각 CAN-H와 CAN-L으로 사용하고 두 개의 와이어 사이의 전압 차이를 이용해 신호를 전달한다. 
+  - Dominant(우성): CAN-H와 CAN-L이 전위차가 있는 경우를 뜻하며 논리적 레벨로 0이 된다. (실질적으론 이정도이다. CAN-H - CAN-L > 0.9V) 
+  - Reccesive(열성): CAN-H와 CAN-L이 전위차가 없는 경우를 뜻하며 논리적 레벨로 1이 된다. (실질적으론 이정도이다. CAN-H - CAN-L < 0.5V)
+
+충돌을 해결하기 위해 CSMA/CD(Carrier Sense Multiple Access / Collision Detection)와 AMP(Arbitration on Message Priority) 방식을 사용한다. 
+- CSMA/CD는 충돌이 감지 되는 즉시 전송을 종료하고 충돌을 알린뒤 랜덤한 시간 뒤에 다시 신호를 보내는 방식이다.
+- AMP는 충돌이 발생한 경우 우선 순위가 높은 메세지(중요한 메세지)가 먼저 보내지고 충돌난 메세지는 이후에 다시 보내게 된다. 
+
+
+### CAN Layer
+
+지금까지 CAN BUS 구조에 대해 알아보았다. 이제 CAN 통신의 기능들을 쉽게 이해하기 위해 CAN Layer에 대해서 살펴보자.
+
+우선 OSI 모델에 대해 이해할 필요가 있다. OSI 모델(Open Systems Interconnection Reference Model)은 표준 프로토콜을 사용하여 다양한 통신 시스템이 통신할 수 있도록 국제표준화기구에서 만든 개념 모델이다. OSI 모델은 통신 시스템을 7개의 계층으로 나누어 설명하는데, 이를 통해 각 계층의 역할과 기능을 명확히 할 수 있다. 
+
+CAN 통신이 어떻게 이루어지는지 이해하기 위해 OSI 모델과 비교하며 볼 것이며, 이를 통해 CAN의 통신 방식을 더 명확하게 이해할 수 있다. 
+
+아래는 OSI 모델과 Classic CAN의 비교이다.
 
 <table>
   <tr>
@@ -59,12 +138,18 @@ CAN은 여러 계층으로 세분화되어있다. Classic CAN에서 layer는 다
   </tr>
   <tr>
     <td> Session Layer </td>
+    <td> </td>
+    <td> </td>
   </tr>
   <tr>
     <td> Transport Layer </td>
+    <td> </td>
+    <td> </td>
   </tr>
   <tr>
     <td> Network Layer </td>
+    <td> </td>
+    <td> </td>
   </tr>
   <tr>
     <td rowspan="2"> Data Link Layer</td>
@@ -118,17 +203,35 @@ CAN은 여러 계층으로 세분화되어있다. Classic CAN에서 layer는 다
   </tr>
 </table>
 
+CAN의 계층을 간단히 설명하자면 다음과 같다.
 
-- CAN network는 Physical Layer와 Data Link Layer에 대한 내용이다.
-  - Data Link Layer: Frame 송수신을 위한 계층
-  - Physical Layer: 모든 전기적 특성과 관련하여 서로 다른 노드 간 비트 전송을 위한 계층 
-- 상위 레이어는 다른 프로토콜을 사용해도 된다. (ex. XCP, UDS)
+1. Physical Layer (물리 계층)
+   - OSI 모델: 전기적 신호를 전송하고 물리적 연결을 설정하며, 데이터 전송 매체를 정의한다.
+   - CAN: CAN의 물리 계층은 서로 다른 노드 간에 전기적 신호를 전달하는 역할을 한다. 두 개의 와이어(CAN-H, CAN-L)를 사용하여 차동 신호를 전송하며, 외부 전기적 간섭에 강한 내성을 갖는다. 비트 인코딩, 디코딩, 비트 타이밍 및 동기화를 담당한다.
+2. Data Link Layer (데이터 링크 계층)
+   - OSI 모델: 데이터 프레이밍, 물리 주소 지정, 오류 검출 및 수정, 흐름 제어를 담당한다.
+   - CAN: CAN 메시지 프레임은 이 계층에서 처리되며, 메시지의 우선순위를 결정하고 충돌을 방지하는 역할을 한다.
+   - Classic CAN
+     - Object Layer: 메시지 필터링과 상태 처리를 담당한다.
+     - Transfer Layer: 오류 격리, 오류 검출 및 신호, 메시지 검증, 확인, 중재, 메시지 프레이밍, 전송 속도 및 타이밍을 관리한다.
+   - Extended CAN
+     - Logical Link Control sublayer: 수락 필터링, 과부하 알림, 복구 관리를 담당한다.
+     - Medium Access Control sublayer: 데이터 캡슐화/디캡슐화, 프레임 코딩, 매체 접근 관리, 오류 검출, 오류 신호, 확인, 직렬화/디직렬화를 수행한다.
+3. Network Layer 이상 (네트워크 계층 이상)
+   - OSI 모델: 논리적 주소 지정, 경로 설정, 데이터 전송의 신뢰성을 보장, 통신 세션 관리, 데이터 형식 변환 및 최종 사용자와의 상호작용을 담당한다.
+   - CAN: 네트워크 계층 이상의 기능은 다른 프로토콜(예: XCP, UDS on CAN 등)을 통해 구현될 수 있다.
 
+CAN Layer의 각 계층에서 수행되는 주요 기능을 보며 CAN의 기능들이 어떤게 있는지 어느정도 이해할 수 있었을 것이다. 
 
-### CAN Frame Types
+### CAN Message
+이제 CAN 메시지의 구조와 전송 과정에 대해 알아보자.
+
+CAN 메시지는 CAN 네트워크에서 데이터를 주고받는 기본 단위이다. 각 메시지는 특정한 형식과 구조를 가지며, CAN 네트워크의 다양한 노드 간에 효율적이고 신뢰성 있게 데이터를 전송할 수 있도록 설계되어 있다. 
+
+각 목적에 맞는 메세지 프레임들을 살펴보자
 
 #### Data Frame
-데이터를 전달하기 위한 메세지.
+데이터를 전달하기 위한 메세지 프레임이다.
 
 <table>
     <tr>
@@ -231,70 +334,12 @@ Standard 와의 호환
    - 서로 반대 비트를 가짐. R1: bit "0", IDE: bit "1"
 
 
-
-
 #### Remote Frame
 
 재전송을 요청하는 프레임이다. 
 
 전체적으로 Data Frame과 비슷하지만 RTR 비트가 1이어야하고 데이터 필드가 없다.
 
-#### Error Frame
-
-버스 에러를 감지했을때 사용한다.
-
-모든 유닛이 전송할 수 있다.
-
-<table>
-    <tr>
-        <th>Bitfield</th>
-        <th>Standard CAN</th>
-        <th>Extended CAN</th>
-    </tr>
-    <tr>
-        <td>Error Flag</td>
-        <td colspan="2">
-Active Error: 6 consecutive 'dominant' bits<br>
-Passive Error: 6 consecutive 'recessive' bits unless it is overwritten by ’dominant’ bits from other nodes.<br>
-에러를 감지한 ’error active’ 스테이션은 active error flag를 전송한다. SOF부터 CRC까지 모든 필드에 적용되는 비트 스터핑을 위반해서 다른 스테이션에 알림.<br>
-The PASSIVE ERROR FLAG is complete when these 6 equal bits have been detected.
-        </td>
-    </tr>
-    <tr>
-        <td>Error Delimeter</td>
-        <td colspan="2">
-        8 ’recessive’ bits<br>
-ERROR FLAG 전송 후 각 스테이션은 'recessive' 비트를 전송하고 'recessive' 비트를 감지할 때까지 버스를 모니터링함. 그 후에는 7개의 'recessive' 비트를 더 전송하기 시작함
-        </td>
-    </tr>
-</table>
-
-
-#### Overload Frame
-
-프레임 사이에 추가 딜레이를 요청할때 사용한다.
-
-<table>
-    <tr>
-        <th>Bitfield</th>
-        <th>Standard CAN</th>
-        <th>Extended CAN</th>
-    </tr>
-    <tr>
-        <td>Overload Flag</td>
-        <td colspan="2">
-        6 ’dominant’ bits. Active Error 와 동일함
-        </td>
-    </tr>
-    <tr>
-        <td>Overload Delimeter</td>
-        <td colspan="2">
-        8 ’recessive’ bits. ERROR DELIMITER 와 동일함<br>
-        OVERLOAD FLAG 전송 후 스테이션은 'dominant' 비트에서 'recessive' 비트로의 전환을 감지할 때까지 버스를 모니터링함.<br>
-        이 시점에서 모든 버스 정류장은 OVERLOAD FLAG 전송을 완료하고 모든 정류장은 동시에 7개의 'recessive' 비트 전송을 시작함
-        </td>
-    </tr>
-</table>
 
 #### Interframe Spacing
 
@@ -337,6 +382,114 @@ ERROR FLAG 전송 후 각 스테이션은 'recessive' 비트를 전송하고 're
 </table>
 
 해당 프레임이 끝나면 CAN 버스라인은 IDLE 상태로 인식된다.
+
+
+<details>
+<summary><strong>심화내용: Error Frame & Overload Frame(Click)</strong></summary>
+
+<div markdown="1">
+
+#### Error Frame
+
+버스 에러를 감지했을때 사용한다.
+
+모든 유닛이 전송할 수 있다.
+
+<table>
+    <tr>
+        <th>Bitfield</th>
+        <th>Standard CAN</th>
+        <th>Extended CAN</th>
+    </tr>
+    <tr>
+        <td>Error Flag</td>
+        <td colspan="2">
+Active Error: 6 consecutive 'dominant' bits<br>
+Passive Error: 6 consecutive 'recessive' bits unless it is overwritten by ’dominant’ bits from other nodes.<br>
+에러를 감지한 ’error active’ 스테이션은 active error flag를 전송한다. SOF부터 CRC까지 모든 필드에 적용되는 비트 스터핑을 위반해서 다른 스테이션에 알림.<br>
+The PASSIVE ERROR FLAG is complete when these 6 equal bits have been detected.
+        </td>
+    </tr>
+    <tr>
+        <td>Error Delimeter</td>
+        <td colspan="2">
+        8 ’recessive’ bits<br>
+ERROR FLAG 전송 후 각 스테이션은 'recessive' 비트를 전송하고 'recessive' 비트를 감지할 때까지 버스를 모니터링함. 그 후에는 7개의 'recessive' 비트를 더 전송하기 시작함
+        </td>
+    </tr>
+</table>
+
+에러 프레임은 CAN 네트워크에서 오류를 감지하고 처리하기 위해 사용된다. CAN 노드는 데이터 전송 중 오류를 실시간으로 모니터링하며, 오류가 발생하면 즉시 에러 프레임을 전송하여 네트워크의 다른 노드에 알린다. 에러 프레임은 두 가지 주요 부분으로 구성된다:
+
+에러 플래그 (Error Flag): 연속된 지배 비트로 구성되어 오류를 신호한다.
+에러 딜리미터 (Error Delimiter): 에러 플래그 뒤에 오는 연속된 비지배 비트로, 에러 프레임의 끝을 나타낸다.
+에러 프레임이 전송되면, 네트워크의 모든 노드는 현재 전송 중인 메시지를 무시하고 버린다. 그런 다음, 문제가 있는 메시지는 자동으로 재전송된다.
+
+
+
+#### Overload Frame
+
+프레임 사이에 추가 딜레이를 요청할때 사용한다.
+
+<table>
+    <tr>
+        <th>Bitfield</th>
+        <th>Standard CAN</th>
+        <th>Extended CAN</th>
+    </tr>
+    <tr>
+        <td>Overload Flag</td>
+        <td colspan="2">
+        6 ’dominant’ bits. Active Error 와 동일함
+        </td>
+    </tr>
+    <tr>
+        <td>Overload Delimeter</td>
+        <td colspan="2">
+        8 ’recessive’ bits. ERROR DELIMITER 와 동일함<br>
+        OVERLOAD FLAG 전송 후 스테이션은 'dominant' 비트에서 'recessive' 비트로의 전환을 감지할 때까지 버스를 모니터링함.<br>
+        이 시점에서 모든 버스 정류장은 OVERLOAD FLAG 전송을 완료하고 모든 정류장은 동시에 7개의 'recessive' 비트 전송을 시작함
+        </td>
+    </tr>
+</table>
+
+오버로드 프레임은 네트워크의 노드가 데이터 처리 속도를 따라잡지 못할 때 사용된다. 오버로드 프레임은 수신 측 노드가 과부하 상태임을 나타내어 송신 측이 데이터를 전송하기 전에 잠시 대기하도록 한다. 이는 네트워크의 안정성을 유지하고 데이터 손실을 방지하는 데 도움이 된다.
+
+이와 같이 에러 프레임과 오버로드 프레임은 CAN 네트워크의 신뢰성과 안정성을 보장하기 위해 중요한 역할을 한다.
+
+</div>
+</details>
+
+
+
+
+
+### CAN 메세지 송수신 과정
+1. 메시지 송신 전에 CAN 버스 라인이 사용 중인지 파악한다.
+2. 사용 중이지 않으면 메세지를 보내고 사용 중이면 기다린다.
+   - 메세지가 충돌날 수 있지만 우선순위를 비교해서 한 노드만 남고 나머지 노드는 수신하면서 다음 차례를 기다린다.
+3. 메세지를 수신한 모든 노드는 ID를 확인해서 필요한 메세지만 받고 나머지는 무시한다.
+   - CAN 네트워크에서 각각의 노드를 식별할 수 있도록 각 노드 마다 유일한 식별자(11bit 또는 29bit)를 갖는다.
+ - CAN 메시지의 전송 과정은 다음과 같은 단계로 이루어진다:
+
+1. 메시지 생성: 
+  - 각 ECU는 전송할 데이터를 준비하고, 해당 데이터를 CAN 프레임에 담는다. 이 프레임에는 메시지의 우선순위를 나타내는 식별자(ID)가 포함된다.
+2. 버스 접근 및 충돌 회피:
+  - CAN은 비동기식 방식으로 동작하며, 버스가 유휴 상태일 때 모든 ECU가 메시지를 전송할 수 있다.
+  - 만약 두 개 이상의 ECU가 동시에 메시지를 전송하려고 하면, CAN 프로토콜은 메시지 식별자를 기반으로 충돌을 회피한다. 우선순위가 높은 메시지가 먼저 전송되고, 우선순위가 낮은 메시지는 대기한다.
+3. 데이터 전송:
+  - 선택된 ECU는 CAN-H와 CAN-L 와이어를 통해 데이터를 전송한다. 차동 신호 방식 덕분에 외부 간섭에 강하다.
+  - 데이터는 비트 단위로 전송되며, 수신 측에서는 전송된 비트를 해석하여 원래의 데이터를 복원한다.
+4. 에러 검출 및 처리:
+  - 데이터가 전송되는 동안, 각 ECU는 전송된 데이터를 실시간으로 모니터링한다.
+  - 에러가 감지되면, 에러 프레임을 전송하여 네트워크에 알리고, 해당 데이터 프레임은 폐기된다.
+  - 에러가 발생한 메시지는 자동으로 재전송된다.
+5. 메시지 수신 및 처리:
+  - 각 ECU는 모든 메시지를 수신하지만, 자신에게 해당하는 메시지(식별자 기반)만 처리한다.
+  - 메시지를 수신한 ECU는 데이터를 처리하고 필요한 경우 응답 메시지를 생성하여 다시 전송한다.
+
+이와 같이 CAN 메시지는 CAN 네트워크에서 데이터 통신을 효과적으로 수행하는 기본 단위로, 그 구조와 전송 과정은 높은 신뢰성과 효율성을 보장하기 위해 정교하게 설계되어 있다.
+
 
 ### Other things related to CAN 2.0A
 
@@ -405,6 +558,27 @@ Fault Confinement 과 관련해서 송수신기는 아래 세 가지 상태 중�
 전체 식별자를 기반으로 필터링된다
 - 마스크 레지스터를 사용하여 연결된 수신 버퍼에 매핑할 식별자 그룹을 선택할 수 있다.
 - 마스크 레지스터의 모든 비트는 프로그래밍 가능해야 한다. (메시지 필터링을 위해 활성화하거나 비활성화할 수 있다.)
+
+### 호환성
+
+Standard CAN(CAN 2.0A) Controller 는 standard CAN 포맷 방식의 메시지만 송수신이 가능하다.
+- CAN 2.0 이전 사양(1.x)도 서로 통신할 수 있다
+- Extended CAN 메시지를 수신하면 데이터를 무시한다
+
+Extended CAN(CAN 2.0B) Controller 는 Standard, Extended 메시지 포맷 모두 송수신 가능하다.
+- 만약 데이터 프레임이 standard와 extended 모두 같은 Base ID (첫 11 비트)를 가지면 Standard 데이터 프레임으로 인식한다. (SRR은 RTR 1로 인식)
+
+### 종류 
+High Speed CAN(ISO 11898)
+- 1Mbps 이상의 고속 통신이 가능하다.
+- Twisted Wire 끝에 120옴 저항이 달린다.
+- 노이즈에 강하다.
+
+Low Speed CAN(ISO 11519)
+- 125Kbps 까지의 속도로 통신이 가능하다.
+- Twisted Wire를 사용하나 한줄이 끊어져도 정상적으로 통신이 된다.
+- ECU와 버스 사이에 120옴 저항이 달린다.
+
 
 ## 1.2. Concerning CAN FD
 
