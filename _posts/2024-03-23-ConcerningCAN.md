@@ -11,6 +11,7 @@ In the ECU in the car there lived CAN.
 {% include_relative ConcerningCAN/1-Prologue.md %}
 
 {% include_relative ConcerningCAN/2-TheFirstJourney.md %}
+<!--
 
 {% include_relative ConcerningCAN/3-TheJourneyOfTheNineCommunicationModules.md %}
 
@@ -23,3 +24,5 @@ In the ECU in the car there lived CAN.
 {% include_relative ConcerningCAN/7-TheEndOfTheCanAge.md %}
 
 {% include_relative ConcerningCAN/8-Appendix.md %}
+
+-->
