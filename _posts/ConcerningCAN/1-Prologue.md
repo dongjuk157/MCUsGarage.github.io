@@ -4,7 +4,7 @@
 
 우선 CAN 프로토콜이 만들어지기 전의 상황을 간단하게 살펴보자.
 
-초기의 자동차는 엔진의 구동부터 바퀴의 회전까지 모든 과정이 기계적인 움직임에 의존했다. 그러나 자동차의 성능(출력, 연비 향상) 등의 이유로 제어를 전자적으로 하게 되면서 ECU(전자 제어 장치, Electronic Control Unit)가 도입되었다. 이때까지는 각 부품 별로만 통신이 필요했고 센서와 ECU 간에 Point-to-point(점대점, mesh network) 연결 방식으로 통신했다.
+초기의 자동차는 엔진의 구동부터 바퀴의 회전까지 모든 과정이 기계적인 움직임에 의존했다. 그러나 자동차의 성능(출력, 연비 향상) 등의 이유로 제어를 전자적으로 하게 되면서 ECU(전자 제어 장치, Electronic Control Unit)가 도입되었다. 이때까지는 각 부품 별로만 통신이 필요했고 센서와 ECU 간에 Point-to-point([wiki](https://en.wikipedia.org/wiki/Point-to-point_(telecommunications))) 이나 mesh([wiki](https://en.wikipedia.org/wiki/Mesh_networking)) network 방식으로 통신했다.
 
 자동차가 발전하면서 안전성이나 편의성 등의 요구가 증가했고 전자 제어가 필요한 부품들이 더욱 많아졌다. 이에 따라 통신해야할 데이터의 양도 늘어났고, ECU 끼리의 통신도 빈번해졌다. 기존의 Point-to-point 방식으로 통신을 하려면 모든 ECU 사이에 통신선을 놓아야했기 때문에 ECU가 늘어날수록 차량의 무게가 점점 더 무거워지는 문제가 발생했다. 따라서 무게를 크게 증가시키지 않으면서 여러 ECU 사이의 통신을 원활하게 할수 있는 통신 방식이 필요했다.
 
@@ -132,14 +132,14 @@ CAN 프로토콜의 네트워크 구조를 살펴보기전에 일반적인 버�
 
 우선 버스 네트워크의 특징은 확장에 유리하다. 
 - 새로운 노드(데이터를 송수신할 수 있는 최소 장치)를 추가할 때 기존 네트워크에 연결만 하면 된다. 
-- 이론적으로는 무한정 노드를 추가할수 있다.
 
 버스 네트워크는 Multi Master Network 이고 노드간 통신은 Half-duplex 방식이다. 
-- 어떤 노드든 마스터가 되어 데이터를 보낼수 있고 무전기처럼 양방향으로 통신이 가능하나 동시에 송수신은 불가능 하다.
-- 즉, 한 노드가 데이터를 송신하면 나머지 노드는 데이터를 수신하는 관계가 된다. 
+- Multi master Network라는 건 어떤 노드든 마스터가 되어 데이터를 보낼수 있다는 것이다. Sinlge Master Multi Slave 가 있을수 있고 이 경우는 한 노드만 마스터가 되고 나머지는 슬레이브가 되어 단방향으로만 데이터 송수신이 가능하다.
+- Half-duplex(반이중통신)는 통신의 방향성을 나타낸다. 무전기처럼 양방향으로 통신이 가능하나 동시에 송수신은 불가능 하다. 이 외에도 Full duplex(전이중통신), Simplex(단방향 통신) 등이 있다. [wiki](https://en.wikipedia.org/wiki/Duplex_(telecommunications))
+- 즉, BUS 네트워느큰 일반적으로 여러 노드가 데이터를 송수신할 수 있고, 한 노드가 데이터를 송신하면 나머지 노드는 데이터를 수신하는 관계가 된다. 
 
-여러 노드가 동시에 데이터를 전송해서 데이터를 사용하지 못하는 경우(충돌,collision)도 발생할 수 있다.
-- 이를 해결하기 위해 우선 순위나 Media Access Control(MAC, 매체 액세스 제어)를 사용한다.
+여러 노드가 동시에 데이터를 전송해서 데이터를 사용하지 못하는 경우가 생기는데 이를 충돌(collision)이라 한다.
+- 이를 해결하기 위해 우선 순위나 Media Access Control(MAC, [wiki](https://en.wikipedia.org/wiki/Medium_access_control))를 사용한다.
 
 <details>
 <summary><strong>point-to-point 방식과 비교(Click)</strong></summary>
@@ -188,9 +188,9 @@ point-to-point 방식은 다른 노드와 통신하기 위해서 필요한 노�
 
 CAN은 BUS 구조이다. 위의 일반적인 BUS의 특성을 갖는다. 
 - 이론적으론 무한한 노드를 연결할 수 있다. 실질적으론 버스 라인의 지연 시간과 전기 부하에 의해 갯수가 제한된다.
-- 오래된 CAN Controller와 통신하는 CAN 노드 한정으로 서로 다른 identifier를 가진 노드는 최대 2032개만 연결할수 있다. 2032 = 2^11 - 2^4
-  -  2.0A 기준 ID bit가 11개이므로 ID가 서로 다른 노드는 2^11개이다.
-  -  1980년대 Intel CAN 컨트롤러(82526)는 최상위 7bit가 모두 1이면 안된다고 한다. 이 컨트롤러와 호환을 위해 2^(11-7)= 2^4개의 ID는 사용하지 못한다.
+- 오래된 CAN Controller와 통신하는 CAN 노드 한정으로 서로 다른 identifier를 가진 노드는 최대 2032($2032 = 2^{11} - 2^4$)개만 연결할수 있다. 
+  -  2.0A 기준 ID bit가 11개이므로 ID가 서로 다른 노드는 $2^{11}$개이다.
+  -  1980년대 Intel CAN 컨트롤러(82526)는 최상위 7bit가 모두 1이면 안된다고 한다. 이 컨트롤러와 호환을 위해 $2^{11-7}= 2^4$ 개의 ID는 사용하지 못한다.
 
 CAN은 연선 방식(Twisted Pair)의 와이어를 사용하고 차동 신호 방식(Differential Signaling)을 사용하여 데이터를 전송한다. 
 - 연선 방식의 와이어는 잡음(noise)과 간섭(EMI)을 방지한다. 
@@ -199,8 +199,12 @@ CAN은 연선 방식(Twisted Pair)의 와이어를 사용하고 차동 신호 �
   - Reccesive(열성): CAN-H와 CAN-L이 전위차가 없는 경우를 뜻하며 논리적 레벨로 1이 된다. (실질적으론 이정도이다. CAN-H - CAN-L < 0.5V)
 
 충돌을 해결하기 위해 CSMA/CD(Carrier Sense Multiple Access / Collision Detection)와 AMP(Arbitration on Message Priority) 방식을 사용한다. 
-- CSMA/CD는 충돌이 감지 되는 즉시 전송을 종료하고 충돌을 알린뒤 랜덤한 시간 뒤에 다시 신호를 보내는 방식이다.
+- CSMA/CD는 충돌이 감지 되는 즉시 전송을 종료하고 충돌을 알린뒤 랜덤한 시간 뒤에 다시 신호를 보내는 방식이다. 
+  - ![CSMA_CD_flow](../assets/postsAssets/ConcerningCAN/CSMA_CD_Flow.png)<br>(출처: csma/cd wikipedia)
+  - [CSMA wiki](https://en.wikipedia.org/wiki/Carrier-sense_multiple_access)
+  - [CSMA/CD wiki](https://en.wikipedia.org/wiki/Carrier-sense_multiple_access_with_collision_detection)
 - AMP는 충돌이 발생한 경우 우선 순위가 높은 메세지(중요한 메세지)가 먼저 보내지고 충돌난 메세지는 이후에 다시 보내게 된다. 
+
 
 
 ### CAN Layer
@@ -699,29 +703,17 @@ Passive Error: <br>
 
 메세지 전송 과정에 대해서 알아보자
 
+![Flow_Chart_CAN_Transmission](../assets/postsAssets/ConcerningCAN/Flow_Chart_CAN_Transmission.png)
+출처: https://www.javatpoint.com/can-protocol
+
 1. 메시지 송신 전에 CAN 버스 라인이 사용 중인지 파악한다.
+   - 버스가 유휴(IDLE) 상태일 때만 메시지를 전송할 수 있다.
 2. 사용 중이지 않으면 메세지를 보내고 사용 중이면 기다린다.
-   - 메세지가 충돌날 수 있지만 우선순위를 비교해서 한 노드만 남고 나머지 노드는 수신하면서 다음 차례를 기다린다.
+   - 여러 노드가 메세지를 송신할수 있다. 이 경우 메세지가 충돌날 수 있지만 우선순위가 높은 한 메세지만 남고 나머지 노드는 대기한다.
+   - 데이터가 전송되는 동안 에러가 감지되면 에러 메세지를 전송하고 해당 메세지는 폐기한다.
 3. 메세지를 수신한 모든 노드는 ID를 확인해서 필요한 메세지만 받고 나머지는 무시한다.
    - CAN 네트워크에서 각각의 노드를 식별할 수 있도록 각 노드 마다 유일한 식별자(11bit 또는 29bit)를 갖는다.
-
-
-CAN 메시지의 전송 과정은 다음과 같은 단계로 이루어진다:
-1. 메시지 생성: 
-  - 각 ECU는 전송할 데이터를 준비하고, 해당 데이터를 CAN 프레임에 담는다. 이 프레임에는 메시지의 우선순위를 나타내는 식별자(ID)가 포함된다.
-2. 버스 접근 및 충돌 회피:
-  - CAN은 비동기식 방식으로 동작하며, 버스가 유휴 상태일 때 모든 ECU가 메시지를 전송할 수 있다.
-  - 만약 두 개 이상의 ECU가 동시에 메시지를 전송하려고 하면, CAN 프로토콜은 메시지 식별자를 기반으로 충돌을 회피한다. 우선순위가 높은 메시지가 먼저 전송되고, 우선순위가 낮은 메시지는 대기한다.
-3. 데이터 전송:
-  - 선택된 ECU는 CAN-H와 CAN-L 와이어를 통해 데이터를 전송한다. 차동 신호 방식 덕분에 외부 간섭에 강하다.
-  - 데이터는 비트 단위로 전송되며, 수신 측에서는 전송된 비트를 해석하여 원래의 데이터를 복원한다.
-4. 에러 검출 및 처리:
-  - 데이터가 전송되는 동안, 각 ECU는 전송된 데이터를 실시간으로 모니터링한다.
-  - 에러가 감지되면, 에러 프레임을 전송하여 네트워크에 알리고, 해당 데이터 프레임은 폐기된다.
-  - 에러가 발생한 메시지는 자동으로 재전송된다.
-5. 메시지 수신 및 처리:
-  - 각 ECU는 모든 메시지를 수신하지만, 자신에게 해당하는 메시지(식별자 기반)만 처리한다.
-  - 메시지를 수신한 ECU는 데이터를 처리하고 필요한 경우 응답 메시지를 생성하여 다시 전송한다.
+   - 메시지를 수신한 ECU는 데이터를 처리하고 필요한 경우 응답 메시지를 생성하여 다시 전송한다.
 
 
 ### Other things related to CAN 2.0A
@@ -735,13 +727,13 @@ CAN 메시지의 전송 과정은 다음과 같은 단계로 이루어진다:
 Data Frame과 Remote Frame의 SOF 부터 CRC Sequence 까지만 bit stuffing이 사용된다.
 - bit stuffing: 연속되는 5개의 동일한 비트가 감지되면 자동으로 반대 비트를 섞어서 보내는 것.
 
-비트스트림은 NRZ 방식으로 코딩된다.
+비트스트림은 NRZ([wiki](https://en.wikipedia.org/wiki/Non-return-to-zero)) 방식으로 코딩된다.
 - NRZ(Non Return to Zero): 한 비트를 표현할 때 전압을 계속 유지한다.
 - RZ(Return to Zero): 한 클럭 내에서 데이터의 전압을 표현하고 다시 0으로 돌아간다.
 
 ![Compare-NRZ-RZ](https://upload.wikimedia.org/wikipedia/commons/9/95/Digital_signal_encoding_formats-en.svg)
 
-출처 - 위키피디아
+출처 - wikipedia
 
 #### Error Handling
 
@@ -804,17 +796,17 @@ Low Speed CAN(ISO 11519)
 - Twisted Wire를 사용하나 한줄이 끊어져도 정상적으로 통신이 된다.
 - ECU와 버스 사이에 120옴 저항이 달린다.
 
-
 ## 1.2. Concerning CAN FD
 
 CAN with Flexible Data-Rate
+
+<!--
 
 ### 특징
 
 CAN 2.0 프로토콜과 호환된다.
 - ISO 11898-1에 따라 모든 CAN 메세지를 송수신 할 수 있음
 - Data Link Layer, Physical Layer는 CAN 2.0 B 와 동일함
-
 CAN 보다 빠르고 더 많은 비트를 전송할 수 있다.
 - Classic CAN: 1 MBit/s, 8 Byte/Frame
 - CAN FD:
@@ -836,83 +828,9 @@ CAN 보다 빠르고 더 많은 비트를 전송할 수 있다.
 
 CAN FD에는 Remote Frame이 없다.
 
-## 1.3. Concerning CAN-based Protocols
-CAN network는 Physical Layer와 Data Link Layer에 대한 내용이므로 상위 레이어는 다른 프로토콜을 섞어서 사용한다.
+-->
 
-### ISO TP
-
-ISO-TP - ISO 15765-2(자동차 진단용 전송 프로토콜) 
-물리적인 CAN의 길이(CAN 8Byte, CANFD 64Byte)보다 더 긴 메세지를 보내야하는 경우 사용한다.
-- 페이로드 데이터 크기를 최대 4095 Byte까지 확장한다.
-
-ISO TP Frame Types
-
-1. Single Frame(SF)
-2. First Frame(FF)
-3. Consecutive Frame(CF)
-4. Flow Control Frame(FC)
-
-
-### UDS on CAN
-
-#### What is UDS
-Unified diagnostic services (UDS)
-
-자동차 전자 제어 장치 (ECU) 에 사용되는 진단 통신 프로토콜이다.
-
-OSI 모델의 5, 7번째 계층을 사용한다.
-
-Request 기반 프로토콜이므로 클라이언트-서버 관계를 갖는다.
-- 테스터(진단기)가 클라이언트이고 ECU가 서버가 된다. 
-- 테스터가 필요한 기능을 요청하면 서버는 서비스를 제공하고 응답(긍정, 부정)을 준다.
-
-Request Frame
-
-CAN ID / Protocol Control Info(PCI) / Service Identifier(SID) / Sub Function Byte / DID(Data Identifier, Request Data Parameters)
-
-Response Frame
-
-Positive
-- ..
-  
-Negative
-- CAN ID / Protocol Control Info(PCI) / Negative Response(SID): 0x7F / Rejected SID / NRC(Negative Response Code)
-
-
-#### ISO Spec
-Road vehicles / Unified diagnostic services (UDS)
-- ISO 14229-1: Part 1: Application layer
-- ISO 14229-2: Part 2: Session layer services
-- ISO 14229-3: Part 3: Unified diagnostic services on CAN implementation (UDSonCAN)
-
-Road vehicles / Diagnostic communication over Controller Area Network (DoCAN)
-- ISO 15765-1: Part 1: General information and use case definition -> 사용안함
-- ISO 15765-2: Part 2: Transport protocol and network layer services
-- ISO 15765-3: Part 3: Implementation of unified diagnostic services (UDS on CAN) -> 사용안함. ISO 14229-3 으로 흡수
-
-HKMC - UDS
-- ES 95486-02
-
-### XCP
-
-#### What is XCP
-
-Universal Measurement and Calibration Protocol 
-
-https://cdn.vector.com/cms/content/application-areas/ecu-calibration/xcp/XCP_Book_V1.5_EN.pdf
-https://cdn.vector.com/cms/content/application-areas/ecu-calibration/xcp/XCP_ReferenceBook_V2.0_KO.pdf
-
-### Others
-
-EnergyBus - CiA 454 및 IEC 61851-3(배터리-충전기 통신)
-
-SAE J1939(버스 및 트럭용 차량 내 네트워크)
-
-SAE J2284(승용차용 차량 내 네트워크)
-
-GMLAN - 제너럴 모터스(제너럴 모터스용)
-
-## 1.4. Note on the car industry history 
+## 1.3. Note on the car industry history 
 CAN 이전 Mesh 형 토폴로지 사용
 - GM사의 캐딜락
 
