@@ -39,8 +39,9 @@ CAN에 들어가기 앞서 통신에 대해서 이해해보고 CAN과 관련된 
 ![compare communications](../assets/postsAssets/ConcerningCAN/compare_serial_parallel.png)
 
 위 그림은 데이터를 보내는 두 방식을 나타낸다. 병렬 통신(위), 직렬 통신(아래)
+
 그림에서 볼 수 있듯 병렬 통신은 연결한 선 만큼 비트를 한번에 보낼 수 있고, 직렬 통신은 한 선에 비트를 순차적으로 보낸다.
-- 직렬통신에서의 순차적인 비트를 비트스트림(bitstream)이라고 한다.
+- 직렬 통신에서의 순차적인 비트를 비트스트림(bitstream, [wiki](https://en.wikipedia.org/wiki/Bitstream))이라고 한다.
 
 일반적으로 속도는 병렬 통신이 빠르다. 클럭의 한 주기에 비트 하나를 보낼수 있는 데이터 선이 있다고 해보자. 병렬 통신은 데이터 선을 연결한 만큼 한 주기에 배수로 보낼수 있다. 병렬 통신을 위해 8개의 데이터선이 있다고하면 한 주기당 8bit를 보낼수 있다. 직렬 통신에선 하나의 데이터 선만 사용하므로 한 주기당 1bit를 보낼수 있다. 이런 환경에서 32bit 데이터를 각각 보낸다고하면 8bit 병렬 통신은 4 주기에, 직렬통신은 32 주기에 통신을 끝낼 수 있다.
 
@@ -113,20 +114,19 @@ CAN에 들어가기 앞서 통신에 대해서 이해해보고 CAN과 관련된 
 
 ### Synchronous & Asynchrounous Communication
 
-몇가지 통신을 확인해보면 clock 이 들어가는 통신 방식(ex. SPI, i2C)이 있고 들어가지 않는 통신 방식(ex. UART)이 있다. 어떨땐 clock이 필요하고 어떨땐 clock이 필요없는 걸까?
+몇 가지 통신을 확인해보면 clock 이 들어가는 통신 방식(ex. SPI, i2C)이 있고 들어가지 않는 통신 방식(ex. UART)이 있다. 어떨땐 clock이 필요하고 어떨땐 clock이 필요없는 걸까?
 
 우선 clock 이 왜 필요할까를 먼저 생각해보자. 송신자가 "12345678" 이란 데이터를 보낸다고 해보자. 이때 수신자는 받는 속도에 따라 데이터를 다르게 받아 들일것이다.
 1. 수신자가 송신자와 같은 속도(1로 가정)로 받는 경우, 송신자가 보낸 데이터 그대로 받아올수 있다. "12345678"
-2. 수신자가 송신자보다 빠른 속도(2로 가정)로 받는 경우, 중간마다 알수없는 값이 섞여 들어올 것이다. "1x2x3x4x5x6x7x8"
+2. 수신자가 송신자보다 빠른 속도(2로 가정)로 받는 경우, 이전 데이터가 중복되어 들어올 것이다. "1122334455667788"
 3. 수신자가 송신자보다 느린 속도(0.5로 가정)로 받는 경우, 데이터가 씹혀서 들어올것이다. "1357" or "2468"
 
-이 세가지 예를 보면 1)의 예시만 제대로 된 값을 받을수가 있고 2), 3)은 데이터를 한 번 더 처리해서 사용하거나 데이터가 유실되는 문제를 가지고 있다. 따라서 데이터 송수신 속도가 같아야지만 효율적으로 통신할 수 있고 이렇게 송수신 속도를 같게 하기위해 동기화라는 것이 필요하다.
+이 세가지 예를 보면 1)의 예시만 제대로 된 값을 받을수가 있고 2)는 데이터를 중복값을 제거하는 것과 같이 한 번 더 처리해서 사용해야하고 3)은 데이터가 유실되는 문제를 가지고 있다. 따라서 데이터 송수신 속도가 같아야지만 효율적으로 통신할 수 있고 이렇게 송수신 속도를 같게 하기위해 동기화라는 것이 필요하다.
 
 동기화를 구현하기 위해서 두가지 방식이 존재한다. [wiki](https://en.wikipedia.org/wiki/Comparison_of_synchronous_and_asynchronous_signalling)
-- Clock 신호 같이 보내서 동기화를 맞추는 방식을 Synchronous 방식이라고 한다.
-- 데이터 신호로만 동기를 맞추는 방식을 Asynchrounous 방식이라고 한다. 
-  - 데이터에서 클럭을 뽑아낼수 있는 방법은 여러가지가 있겠지만 주로 메세지의 첫 시작을 "010101" 이런식으로 만들어서 보낸다. 010101을 번갈아가면서 보내주면 수신자가 0과 0, 1과 1 사이의 길이를 알 수 있게 되고 이를 통해 속도를 유추할수 있게 된다.
-
+- 데이터 신호와 Clock 신호의 통신선을 분리하고 송신자가 보낸 클럭(혹은 외부 클럭)에 동기화를 맞추는 방식을 Synchronous 방식이라고 한다.
+- 데이터 신호에서 clock을 뽑아내서 동기를 맞추는 방식을 Asynchrounous 방식이라고 한다. 
+  - 데이터에서 클럭을 뽑아낸다는게 이상해 보일수 있을 것이다. 클럭 신호를 유추한다고 생각하면 된다. 유추하는 방법은 여러가지가 있겠지만 주로 메세지의 첫 시작을 HIGH와 LOW를 번갈아 보내는 걸로 유추할수 있다. 예를 들어 메세지의 첫 시작은 무조건 "010101"을 보낸다고 하자. 수신자가 사용하지 않는 상태에 있다가 데이터가 들어오는 것을 감지할수 있다. 이 때 받은 신호에서 0과 0 혹은 1과 1 사이의 주기를 측정하고 이를 통해 속도를 유추 할 수 있다.
 
 ### BUS Network (BUS Topology)
 
@@ -148,7 +148,7 @@ CAN에 들어가기 앞서 통신에 대해서 이해해보고 CAN과 관련된 
 </table>
 
 우선 버스 네트워크의 특징은 확장에 유리하다. 
-- 새로운 노드(데이터를 송수신할 수 있는 최소 장치)를 추가할 때 기존 네트워크에 연결만 하면 된다. 
+- 새로운 노드(데이터를 송수신할 수 있는 최소 장치, [wiki](https://en.wikipedia.org/wiki/Node_(networking)))를 추가할 때 기존 네트워크에 연결만 하면 된다. 
 
 버스 네트워크는 Multi Master Network 이고 노드간 통신은 Half-duplex 방식이다. 
 - Multi master Network라는 건 어떤 노드든 마스터가 되어 데이터를 보낼수 있다는 것이다. Sinlge Master Multi Slave 가 있을수 있고 이 경우는 한 노드만 마스터가 되고 나머지는 슬레이브가 되어 단방향으로만 데이터 송수신이 가능하다.
@@ -189,11 +189,11 @@ point-to-point 방식은 다른 노드와 통신하기 위해서 필요한 노�
 
 ## 1.2. Concerning CAN
 
-> CAN은 자동차 산업 분야에 적용하기 위해 고안된 직렬 통신 프로토콜이다. <br>
-> 고속 데이터 전송과 신뢰성 높은 데이터 통신이 필요할때 사용된다. <br>
-> 차량의 엔진, 변속기 등 다양한 시스템이 CAN을 통해 데이터를 주고 받는다. <br>
+통신에 대해 간략하게 배웠으니 CAN 프로토콜에 대해서 배워보자. CAN은 자동차 산업 분야에 적용하기 위해 고안된 직렬 통신 프로토콜이다. 
 
 ### CAN BUS
+
+CAN도 BUS 구조이다. 지난 챕터에 BUS 네트워크에 대해서 언급했으니 이해하기 쉽게 CAN BUS부터 확인하자.
 
 <table>
   <tr>
@@ -210,17 +210,20 @@ point-to-point 방식은 다른 노드와 통신하기 위해서 필요한 노�
   </tr>
 </table>
 
-CAN은 BUS 구조이다. 위의 일반적인 BUS의 특성을 갖는다. 
+CAN도 일반적인 BUS의 특성을 갖는다. 
 - 이론적으론 무한한 노드를 연결할 수 있다. 실질적으론 버스 라인의 지연 시간과 전기 부하에 의해 갯수가 제한된다.
 - 오래된 CAN Controller와 통신하는 CAN 노드 한정으로 서로 다른 identifier를 가진 노드는 최대 2032($2032 = 2^{11} - 2^4$)개만 연결할수 있다. 
   -  2.0A 기준 ID bit가 11개이므로 ID가 서로 다른 노드는 $2^{11}$개이다.
   -  1980년대 Intel CAN 컨트롤러(82526)는 최상위 7bit가 모두 1이면 안된다고 한다. 이 컨트롤러와 호환을 위해 $2^{11-7}= 2^4$ 개의 ID는 사용하지 못한다.
 
-CAN은 연선 방식(Twisted Pair)의 와이어를 사용하고 차동 신호 방식(Differential Signaling)을 사용하여 데이터를 전송한다. 
+CAN은 연선 방식(Twisted Pair, [wiki](https://en.wikipedia.org/wiki/Twisted_pair))의 와이어를 사용하고 차동 신호 방식(Differential Signaling, [wiki](https://en.wikipedia.org/wiki/Differential_signalling))을 사용하여 데이터를 전송한다. 
 - 연선 방식의 와이어는 잡음(noise)과 간섭(EMI)을 방지한다. 
 - 두 개의 와이어는 각각 CAN-H와 CAN-L으로 사용하고 두 개의 와이어 사이의 전압 차이를 이용해 신호를 전달한다. 
   - Dominant(우성): CAN-H와 CAN-L이 전위차가 있는 경우를 뜻하며 논리적 레벨로 0이 된다. (실질적으론 이정도이다. CAN-H - CAN-L > 0.9V) 
   - Reccesive(열성): CAN-H와 CAN-L이 전위차가 없는 경우를 뜻하며 논리적 레벨로 1이 된다. (실질적으론 이정도이다. CAN-H - CAN-L < 0.5V)
+  - Dominant, Reccesive각 논리 레벨로 0,1인 이유는 CAN BUS가 Wired AND Connection이기 때문에 (0이 존재하면 항상 0이 나오므로) 0이 항상 우세하다. 
+    - [Meaning of Dominant & Reccesive](https://electronics.stackexchange.com/questions/112082/what-exactly-is-dominant-and-recessive)
+    - [Wired_logic_connection](https://en.wikipedia.org/wiki/Wired_logic_connection)
 
 충돌을 해결하기 위해 CSMA/CD(Carrier Sense Multiple Access / Collision Detection)와 AMP(Arbitration on Message Priority) 방식을 사용한다. 
 - CSMA/CD는 충돌이 감지 되는 즉시 전송을 종료하고 충돌을 알린뒤 랜덤한 시간 뒤에 다시 신호를 보내는 방식이다. 
@@ -233,24 +236,82 @@ CAN은 연선 방식(Twisted Pair)의 와이어를 사용하고 차동 신호 �
 
 ### CAN Layer
 
-지금까지 CAN BUS 구조에 대해 알아보았다. 이제 CAN 통신의 기능들을 쉽게 이해하기 위해 CAN Layer에 대해서 살펴보자.
+CAN 통신의 기능들을 쉽게 이해하기 위해 CAN Layer에 대해서 살펴보자.
 
-우선 OSI 모델에 대해 이해할 필요가 있다. OSI 모델(Open Systems Interconnection Reference Model)은 표준 프로토콜을 사용하여 다양한 통신 시스템이 통신할 수 있도록 국제표준화기구에서 만든 개념 모델이다. OSI 모델은 통신 시스템을 7개의 계층으로 나누어 설명하는데, 이를 통해 각 계층의 역할과 기능을 명확히 할 수 있다. 
+OSI 모델과 CAN Layer를 비교하면 명확하게 이해할 수 있겠지만 양이 너무 방대하니 CAN의 계층을 간단히 요약하자면 다음과 같다. 
 
-CAN 통신이 어떻게 이루어지는지 이해하기 위해 OSI 모델과 비교하며 볼 것이며, 이를 통해 CAN의 통신 방식을 더 명확하게 이해할 수 있다. 
+1. Physical Layer (물리 계층)
+   - PDU(전송단위): Bit, symbol
+   - OSI 모델: 전기적 신호를 전송하고 물리적 연결을 설정하며, 데이터 전송 매체를 정의한다.
+   - CAN: CAN의 물리 계층은 서로 다른 노드 간에 전기적 신호를 전달하는 역할을 한다. 외부 전기적 간섭에 강한 내성을 갖는다. 
+   - Standard CAN:
+     - Signal Level and Bit Representation
+     - Transmission Medium
+   - Extended CAN:
+     - Bit Encoding/Decoding
+     - Bit Timing
+     - Synchronization
+2. Data Link Layer (데이터 링크 계층)
+   - PDU(전송단위): Frame([wiki](https://en.wikipedia.org/wiki/Frame_(networking)))
+     - Frame 은 일반적으로 동기화 비트, 데이터(페이로드), 프레임 검사 시퀀스로 이루어져있고, interframe gap을 통해 다음 프레임과 구분된다.
+   - OSI 모델: 데이터 프레이밍, 물리 주소 지정, 오류 검출 및 수정, 흐름 제어를 담당한다.
+   - CAN: CAN 메시지 프레임은 이 계층에서 처리되며, 메시지의 우선순위를 결정하고 충돌을 방지하는 역할을 한다.
+   - Standard CAN
+     - Transfer Layer: 
+       - Fault Confinement: 단기적인 오류(short distubances)와 영구적인 오류(permanent failures)를 구별한다. 영구적인 결함이면 사용못하게 한다.(switch off)
+       - Error Detection: 모니터링(송신기측 비트레벨과 버스에서 감지된 비트레벨 비교), CRC, Bit Stuffing, Message Frame Check 등을 통해 오류를 감지한다.
+       - Error Signaling: 메시지가 손상된 경우 전송이 중단 되고 재전송된다.
+       - Message Validation: 메세지가 올바른지 확인한다.
+       - Acknowledgment: 메세지를 수신했다고 알린다.
+       - Arbitration: 버스에서의 충돌은 식별자를 사용해서 비트 단위로 중재한다. 동일 식별자를 가진 데이터프레임과 원격 프레임은 데이터 프레임이 우선된다.
+       - Message Framing: 메세지 프레임 단위로 인식할수 있도록 묶고 푸는 작업을 한다.(Encapsulation/Decapsulation) 
+       - Transfer Rate and Timing
+     - Object Layer:
+       - Message Filtering: 식별자를 읽고 데이터를 사용할지 선택한다.
+       - Message and Status Handling: 메시지의 전송, 수신, 처리 상태를 관리해서 메세지 상태를 추적하고 오류를 감시한다. 
+   - Extended CAN
+     - Medium Access Control sublayer:
+       - Data Encapsulation(Decapsulation): 메세지 프레임 단위로 인식할수 있도록 묶고 푸는 작업을 한다. (네트워크 레이어 <-> 데이터링크 레이어)
+       - Frame Coding(Stuffing, Destuffing): 연속된 비트에 대해 반대 비트를 넣어주는 작업. 수신측에선 빼는 작업을 한다.
+       - Medium Access Management: 네트워크 매체(버스)를 사용하는 여러 노드 간의 충돌을 방지하고, 효율적인 통신을 보장한다. (arbitration, CSMA/DA)
+       - Error Detection: 모니터링(송신기측 비트레벨과 버스에서 감지된 비트레벨 비교), CRC, Bit Stuffing, Message Frame Check 등을 통해 오류를 감지한다.
+       - Error Signaling: 메시지가 손상된 경우 전송이 중단 되고 재전송된다
+       - Acknoledgment: 메세지를 수신했다고 알린다.
+       - Serialization/Deserializaion: 송신 프레임을 보낼수 있는 비트단위로 쪼개고, 수신된 비트를 프레임으로 합치는 작업을 한다.(데이터링크 레이어 <-> 물리 레이어)
+     - Logical Link Control sublayer: 
+       - Acceptance Filtering: 식별자를 읽고 데이터를 사용할지 선택한다.
+       - Overload Notification: 네트워크에서 프레임 전송이 지연되도록 신호를 보낸다. CAN 버스의 과부하를 방지하거나 다른 중요한 작업을 처리하기 위해 사용된다.
+       - Recovery Management: 오류가 감지 되지 않은 경우 그 다음 메세지가 시작되도록 복구한다.
+3. Network Layer 이상 (네트워크 계층 이상)
+   - OSI 모델: 논리적 주소 지정, 경로 설정, 데이터 전송의 신뢰성을 보장, 통신 세션 관리, 데이터 형식 변환 및 최종 사용자와의 상호작용을 담당한다.
+   - CAN: 네트워크 계층 이상의 기능은 다른 프로토콜(예: XCP, UDS on CAN 등)을 통해 구현될 수 있다.
 
-아래는 OSI 모델과 Classic CAN의 비교이다.
+용어가 어렵기도 하고, 계층에 대해서 설명하다가 갑자기 Standard CAN과 Extended CAN이 나와서 혼란스러울 수도 있다. 그래도 CAN의 기능들이 어떤게 있는지 어느정도 파악했으니 넘어가도록하자. 
+- Standard CAN과 Extended CAN은 식별자(ID)비트의 수로 인한 차이를 제외하고선 용어만 다르게 정의되어있을뿐 크게 다르지 않다. 자세한 내용은 CAN Message 챕터에서 확인하자.
+- 용어에 대한 설명들도 이후 챕터에서 자세히 설명하도록 하겠다.
+
+<details>
+<summary><strong>OSI 모델과 CAN의 비교(Click)</strong></summary>
+
+<div markdown="1">
+
+OSI 모델([wiki](https://en.wikipedia.org/wiki/OSI_model))은 한 번 정도는 읽어보고 이해할 필요가 있다. OSI 모델(Open Systems Interconnection Reference Model)은 표준 프로토콜을 사용하여 다양한 통신 시스템이 통신할 수 있도록 국제표준화기구에서 만든 개념 모델이다. OSI 모델은 통신 시스템을 7개의 계층으로 나누어 설명하는데, 이를 통해 각 계층의 역할과 기능을 명확히 할 수 있다.
+
+특히 봐야할 것은 Layer 별 PDU이고 CAN은 Datalink Layer 아래에만 있다는 것이다.
+
 
 <table>
   <tr>
     <th> OSI 7 Layers</th>
+    <th> Protocol Data Unit (PDU) </th>
     <th> CAN 2.0 Part A<br>Standard CAN </th>
     <th> CAN 2.0 Part B<br>Extended CAN </th>
   </tr>
   <tr>
     <td> Application Layer </td>
-    <td> Application Layer </td>
-    <td> Application Layer </td>
+    <td rowspan="3"> Data </td>
+    <td>  </td>
+    <td>  </td>
   </tr>
   <tr>
     <td> Presentation Layer </td>
@@ -264,16 +325,19 @@ CAN 통신이 어떻게 이루어지는지 이해하기 위해 OSI 모델과 비
   </tr>
   <tr>
     <td> Transport Layer </td>
+    <td> Segment </td>
     <td> </td>
     <td> </td>
   </tr>
   <tr>
     <td> Network Layer </td>
+    <td> Packet </td>
     <td> </td>
     <td> </td>
   </tr>
   <tr>
     <td rowspan="2"> Data Link Layer</td>
+    <td rowspan="2"> Frame </td>
     <td>
     <strong>Object Layer</strong><br>
     - Message Filtering<br> 
@@ -310,6 +374,7 @@ CAN 통신이 어떻게 이루어지는지 이해하기 위해 OSI 모델과 비
   </tr>
   <tr>
     <td> Physical Layer </td>
+    <td> Bit </td>
     <td>
     <strong>Physical Layer</strong><br>
     - Signal Level and Bit Representation<br>
@@ -324,25 +389,11 @@ CAN 통신이 어떻게 이루어지는지 이해하기 위해 OSI 모델과 비
   </tr>
 </table>
 
-CAN의 계층을 간단히 설명하자면 다음과 같다.
+</div>
+</details>
 
-1. Physical Layer (물리 계층)
-   - OSI 모델: 전기적 신호를 전송하고 물리적 연결을 설정하며, 데이터 전송 매체를 정의한다.
-   - CAN: CAN의 물리 계층은 서로 다른 노드 간에 전기적 신호를 전달하는 역할을 한다. 두 개의 와이어(CAN-H, CAN-L)를 사용하여 차동 신호를 전송하며, 외부 전기적 간섭에 강한 내성을 갖는다. 비트 인코딩, 디코딩, 비트 타이밍 및 동기화를 담당한다.
-2. Data Link Layer (데이터 링크 계층)
-   - OSI 모델: 데이터 프레이밍, 물리 주소 지정, 오류 검출 및 수정, 흐름 제어를 담당한다.
-   - CAN: CAN 메시지 프레임은 이 계층에서 처리되며, 메시지의 우선순위를 결정하고 충돌을 방지하는 역할을 한다.
-   - Classic CAN
-     - Object Layer: 메시지 필터링과 상태 처리를 담당한다.
-     - Transfer Layer: 오류 격리, 오류 검출 및 신호, 메시지 검증, 확인, 중재, 메시지 프레이밍, 전송 속도 및 타이밍을 관리한다.
-   - Extended CAN
-     - Logical Link Control sublayer: 수락 필터링, 과부하 알림, 복구 관리를 담당한다.
-     - Medium Access Control sublayer: 데이터 캡슐화/디캡슐화, 프레임 코딩, 매체 접근 관리, 오류 검출, 오류 신호, 확인, 직렬화/디직렬화를 수행한다.
-3. Network Layer 이상 (네트워크 계층 이상)
-   - OSI 모델: 논리적 주소 지정, 경로 설정, 데이터 전송의 신뢰성을 보장, 통신 세션 관리, 데이터 형식 변환 및 최종 사용자와의 상호작용을 담당한다.
-   - CAN: 네트워크 계층 이상의 기능은 다른 프로토콜(예: XCP, UDS on CAN 등)을 통해 구현될 수 있다.
 
-CAN Layer의 각 계층에서 수행되는 주요 기능을 보며 CAN의 기능들이 어떤게 있는지 어느정도 이해할 수 있었을 것이다. 
+
 
 ### CAN Message
 이제 CAN 메시지의 구조에 대해 알아보자.
